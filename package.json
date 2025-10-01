@@ -1,0 +1,42 @@
+{
+  "name": "sailfish-sdk",
+  "version": "1.0.0",
+  "description": "Sailfish SDK for JavaScript and TypeScript",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup --cjsInterop",
+    "clean": "rm -rf dist",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "sailfish",
+    "sdk",
+    "typescript",
+    "javascript"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/axios": "^0.14.4",
+    "@types/node": "^24.6.1",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "axios": "^1.12.2"
+  },
+  "peerDependencies": {
+    "axios": "^1.12.2"
+  }
+}
