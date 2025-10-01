@@ -16,6 +16,7 @@
   ],
   "scripts": {
     "build": "tsup --cjsInterop",
+    "prepare": "npm run build",
     "clean": "rm -rf dist",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
