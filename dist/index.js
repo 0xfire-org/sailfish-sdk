@@ -81,8 +81,8 @@ var PoolType = /* @__PURE__ */ ((PoolType2) => {
 var import_axios = __toESM(require("axios"));
 
 // src/constants.ts
-var PRODUCTION_API_URL = "https://sailfish.0xfire.com:1100";
-var PRODUCTION_WS_URL = "wss://sailfish.0xfire.com:30399/public/ws";
+var PRODUCTION_API_URL = "https://sailfish.0xfire.com";
+var PRODUCTION_WS_URL = "wss://sailfish.0xfire.com/stream/public/ws";
 
 // src/api.ts
 var HEADERS = { headers: { "Content-Type": "application/json" } };
@@ -333,8 +333,14 @@ var Sailfish = class {
     this.filter = filter;
     this.ws.updateFilter(filter);
   }
+  hasCachedPoolInfo(poolAddress) {
+    return this.poolInfos[poolAddress] !== void 0;
+  }
+  hasCachedTokenInfo(tokenAddress) {
+    return this.tokenInfos[tokenAddress] !== void 0;
+  }
   async fetchPoolInfo(poolAddress) {
-    if (this.poolInfos[poolAddress] !== void 0) {
+    if (this.hasCachedPoolInfo(poolAddress)) {
       return this.poolInfos[poolAddress];
     }
     try {
@@ -349,7 +355,7 @@ var Sailfish = class {
     }
   }
   async fetchTokenInfo(tokenAddress) {
-    if (this.tokenInfos[tokenAddress] !== void 0) {
+    if (this.hasCachedTokenInfo(tokenAddress)) {
       return this.tokenInfos[tokenAddress];
     }
     try {
@@ -367,7 +373,7 @@ var Sailfish = class {
     this.poolInfos[poolInfo.address] = poolInfo;
   }
   async buildPoolInfoFromPoolInit(poolInit, supportedQuoteTokens = DEFAULT_QUOTE_TOKEN_ADDRESSES) {
-    if (this.poolInfos[poolInit.pool_address] !== void 0) {
+    if (this.hasCachedPoolInfo(poolInit.pool_address)) {
       return this.poolInfos[poolInit.pool_address];
     }
     const token0Info = await this.fetchTokenInfo(poolInit.token_0_mint);

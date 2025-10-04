@@ -175,8 +175,16 @@ export class Sailfish {
     this.ws.updateFilter(filter);
   }
 
+  public hasCachedPoolInfo(poolAddress: string): boolean {
+    return this.poolInfos[poolAddress] !== undefined;
+  }
+
+  public hasCachedTokenInfo(tokenAddress: string): boolean {
+    return this.tokenInfos[tokenAddress] !== undefined;
+  }
+
   public async fetchPoolInfo(poolAddress: string): Promise<PoolInfo | Error> {
-    if (this.poolInfos[poolAddress] !== undefined) {
+    if (this.hasCachedPoolInfo(poolAddress)) {
       return this.poolInfos[poolAddress];
     }
 
@@ -193,7 +201,7 @@ export class Sailfish {
   }
 
   public async fetchTokenInfo(tokenAddress: string): Promise<TokenInfo | Error> {
-    if (this.tokenInfos[tokenAddress] !== undefined) {
+    if (this.hasCachedTokenInfo(tokenAddress)) {
       return this.tokenInfos[tokenAddress];
     }
 
@@ -217,7 +225,7 @@ export class Sailfish {
     poolInit: PoolInit,
     supportedQuoteTokens: string[] = DEFAULT_QUOTE_TOKEN_ADDRESSES,
   ): Promise<PoolInfo | Error> {
-    if (this.poolInfos[poolInit.pool_address] !== undefined) {
+    if (this.hasCachedPoolInfo(poolInit.pool_address)) {
       return this.poolInfos[poolInit.pool_address];
     }
 

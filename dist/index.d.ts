@@ -162,6 +162,8 @@ declare class Sailfish {
     onMessage(message: SailfishMessage): void;
     convertTradeRawToTrade(tradeRaw: TradeRaw): Trade | null;
     updateFilter(filter: Filter): void;
+    hasCachedPoolInfo(poolAddress: string): boolean;
+    hasCachedTokenInfo(tokenAddress: string): boolean;
     fetchPoolInfo(poolAddress: string): Promise<PoolInfo | Error>;
     fetchTokenInfo(tokenAddress: string): Promise<TokenInfo | Error>;
     insertPoolInfo(poolInfo: PoolInfo): void;
@@ -199,7 +201,7 @@ declare class SailfishWebsocket {
     send(data: string | object): void;
 }
 
-declare const PRODUCTION_API_URL = "https://sailfish.0xfire.com:1100";
-declare const PRODUCTION_WS_URL = "wss://sailfish.0xfire.com:30399/public/ws";
+declare const PRODUCTION_API_URL = "https://sailfish.0xfire.com";
+declare const PRODUCTION_WS_URL = "wss://sailfish.0xfire.com/stream/public/ws";
 
 export { BONDING_CURVE_POOL_TYPES, DEFAULT_QUOTE_TOKEN_ADDRESSES, type Filter, type InstructionPosition, PRODUCTION_API_URL, PRODUCTION_WS_URL, type PoolInfo, type PoolInit, PoolType, Sailfish, SailfishApi, type SailfishCallbacks, SailfishEventResource, SailfishEventType, type SailfishMessage, SailfishWebsocket, type SolTxData, type TokenInfo, type TokenInit, type TokenMint, type Trade, type TradeIndex, type TradeRaw, amountToFloatString, getQuoteAndBaseTokenInfos, getTradeData };
