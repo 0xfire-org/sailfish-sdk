@@ -1,4 +1,5 @@
 import type { Filter, SailfishMessage } from "./types";
+import WebSocket from "isomorphic-ws";
 
 export class SailfishWebsocket {
   private socket: WebSocket | null = null;

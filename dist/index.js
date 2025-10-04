@@ -109,6 +109,7 @@ var SailfishApi = class {
 };
 
 // src/websocket.ts
+var import_isomorphic_ws = __toESM(require("isomorphic-ws"));
 var SailfishWebsocket = class {
   constructor(ws_url, botName, filter, callback) {
     this.socket = null;
@@ -138,7 +139,7 @@ var SailfishWebsocket = class {
     this.reconnectAttempts++;
     this.connecting = true;
     console.log(`Connecting to ${this.ws_url} for ${this.botName}, attempt ${this.reconnectAttempts}`);
-    this.socket = new WebSocket(this.ws_url);
+    this.socket = new import_isomorphic_ws.default(this.ws_url);
     this.socket.addEventListener("open", this.onOpen.bind(this));
     this.socket.addEventListener("message", this.onMessage.bind(this));
     this.socket.addEventListener("close", this.onClose.bind(this));
@@ -190,7 +191,7 @@ var SailfishWebsocket = class {
     this.socket = null;
   }
   send(data) {
-    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+    if (!this.socket || this.socket.readyState !== import_isomorphic_ws.default.OPEN) {
       console.warn(`Cannot send message; socket not open for ${this.botName}`);
       return;
     }

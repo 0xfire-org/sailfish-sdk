@@ -61,6 +61,7 @@ var SailfishApi = class {
 };
 
 // src/websocket.ts
+import WebSocket from "isomorphic-ws";
 var SailfishWebsocket = class {
   constructor(ws_url, botName, filter, callback) {
     this.socket = null;
