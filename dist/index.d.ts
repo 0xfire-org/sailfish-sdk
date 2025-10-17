@@ -153,12 +153,16 @@ declare function getQuoteAndBaseTokenInfos(token0Info: TokenInfo, token1Info: To
 };
 declare class Sailfish {
     private filter;
+    private wsUrl;
     private ws;
     private api;
     private poolInfos;
     private tokenInfos;
     private callbacks;
     constructor(callbacks: SailfishCallbacks, filter: Filter, apiUrl?: string, wsUrl?: string);
+    isRunning(): boolean;
+    swim(): void;
+    rest(): void;
     onMessage(message: SailfishMessage): void;
     convertTradeRawToTrade(tradeRaw: TradeRaw): Trade | null;
     updateFilter(filter: Filter): void;

@@ -255,19 +255,36 @@ function getQuoteAndBaseTokenInfos(token0Info, token1Info, supportedQuoteTokens 
 }
 var Sailfish = class {
   constructor(callbacks, filter, apiUrl = PRODUCTION_API_URL, wsUrl = PRODUCTION_WS_URL) {
+    this.ws = null;
     this.api = new SailfishApi(apiUrl);
     this.callbacks = callbacks;
     this.filter = filter;
+    this.wsUrl = wsUrl;
+    this.poolInfos = {};
+    this.tokenInfos = {};
+  }
+  isRunning() {
+    return this.ws !== null && this.ws.connected;
+  }
+  swim() {
+    if (this.ws !== null) {
+      return;
+    }
     this.ws = new SailfishWebsocket(
-      wsUrl,
+      this.wsUrl,
       "sailfish-ws",
-      filter,
+      this.filter,
       (message) => {
         this.onMessage(message);
       }
     );
-    this.poolInfos = {};
-    this.tokenInfos = {};
+  }
+  rest() {
+    if (this.ws === null) {
+      return;
+    }
+    this.ws.stop();
+    this.ws = null;
   }
   onMessage(message) {
     switch (message.resource) {
@@ -331,7 +348,9 @@ var Sailfish = class {
   }
   updateFilter(filter) {
     this.filter = filter;
-    this.ws.updateFilter(filter);
+    if (this.ws !== null) {
+      this.ws.updateFilter(filter);
+    }
   }
   hasCachedPoolInfo(poolAddress) {
     return this.poolInfos[poolAddress] !== void 0;

@@ -80,7 +80,8 @@ export function getQuoteAndBaseTokenInfos(token0Info: TokenInfo, token1Info: Tok
 
 export class Sailfish {
   private filter: Filter;
-  private ws: SailfishWebsocket;
+  private wsUrl: string;
+  private ws: SailfishWebsocket | null = null;
   private api: SailfishApi;
   private poolInfos: Record<string, PoolInfo>;
   private tokenInfos: Record<string, TokenInfo>;
@@ -95,14 +96,36 @@ export class Sailfish {
     this.api = new SailfishApi(apiUrl);
     this.callbacks = callbacks;
     this.filter = filter;
-    this.ws = new SailfishWebsocket(
-      wsUrl,
-      "sailfish-ws",
-      filter,
-      (message: SailfishMessage) => { this.onMessage(message) },
-    );
+    this.wsUrl = wsUrl;
     this.poolInfos = {};
     this.tokenInfos = {};
+  }
+
+  public isRunning(): boolean {
+    return this.ws !== null && this.ws.connected;
+  }
+
+  public swim() {
+    if (this.ws !== null) {
+      return;
+    }
+
+    this.ws = new SailfishWebsocket(
+      this.wsUrl,
+      "sailfish-ws",
+      this.filter,
+      (message: SailfishMessage) => { this.onMessage(message) },
+    );
+  }
+
+
+  public rest() {
+    if (this.ws === null) {
+      return;
+    }
+
+    this.ws.stop();
+    this.ws = null;
   }
 
   public onMessage(message: SailfishMessage) {
@@ -172,7 +195,9 @@ export class Sailfish {
 
   public updateFilter(filter: Filter) {
     this.filter = filter;
-    this.ws.updateFilter(filter);
+    if (this.ws !== null) {
+      this.ws.updateFilter(filter);
+    }
   }
 
   public hasCachedPoolInfo(poolAddress: string): boolean {
