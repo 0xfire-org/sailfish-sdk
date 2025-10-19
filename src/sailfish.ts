@@ -26,7 +26,7 @@ export const DEFAULT_QUOTE_TOKEN_ADDRESSES: string[] = [
 
 export const BONDING_CURVE_POOL_TYPES: PoolType[] = [
   PoolType.PumpFunAmm,
-  PoolType.RadiumLaunchpad,
+  PoolType.RaydiumLaunchpad,
 ];
 
 export function amountToFloatString(amount: string | number, decimals: number): string {
@@ -288,6 +288,8 @@ export class Sailfish {
         baseTokenInfo.address,
         quoteTokenInfo.address,
       ],
+      token_0: quoteTokenInfo.address,
+      token_1: baseTokenInfo.address,
     };
 
     return poolInfo;

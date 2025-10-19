@@ -25,7 +25,7 @@ declare enum PoolType {
     RaydiumAmm = "RaydiumAmm",
     RaydiumCpmm = "RaydiumCpmm",
     RaydiumClmm = "RaydiumClmm",
-    RadiumLaunchpad = "RadiumLaunchpad",
+    RaydiumLaunchpad = "RaydiumLaunchpad",
     PumpSwapAmm = "PumpSwapAmm",
     PumpFunAmm = "PumpFunAmm",
     MeteoraDyn = "MeteoraDyn",
@@ -57,6 +57,8 @@ type PoolInfo = {
     base_token: TokenInfo;
     buy_path: string[];
     sell_path: string[];
+    token_0: string;
+    token_1: string;
 };
 type TradeIndex = {
     tick: number;
@@ -135,12 +137,159 @@ type TokenMint = {
     mint: string;
     mint_authority: string | null;
 };
+type TradesQuery = {
+    from_block: number;
+    to_block: number;
+    pool_addresses: string[];
+};
+type GraduatedPoolsQuery = {
+    from_block: number;
+    to_block: number;
+    pool_types: PoolType[];
+    pool_addresses: string[];
+};
+type IndexedPumpFunGraduatedPool = {
+    created_at: Date;
+    slot: number;
+    version: string;
+    first_signer: string;
+    first_signature: string;
+    all_signers: string[];
+    all_signatures: string[];
+    fee: number;
+    priority_fee: number;
+    index_in_slot: number;
+    bribe: number;
+    global: string;
+    withdraw_authority: string;
+    mint: string;
+    bonding_curve: string;
+    associated_bonding_curve: string;
+    user: string;
+    system_program: string;
+    token_program: string;
+    pump_amm: string;
+    pool: string;
+    pool_authority: string;
+    pool_authority_mint_account: string;
+    pool_authority_wsol_account: string;
+    amm_global_config: string;
+    wsol_mint: string;
+    lp_mint: string;
+    user_pool_token_account: string;
+    pool_base_token_account: string;
+    pool_quote_token_account: string;
+    token_2022_program: string;
+    associated_token_program: string;
+    pump_amm_event_authority: string;
+    event_authority: string;
+    program: string;
+    coin_creator: string;
+};
+type IndexedRaydiumLaunchpadMigrateToAmm = {
+    created_at: Date;
+    slot: number;
+    version: string;
+    first_signer: string;
+    first_signature: string;
+    all_signers: string[];
+    all_signatures: string[];
+    fee: number;
+    priority_fee: number;
+    index_in_slot: number;
+    bribe: number;
+    payer: string;
+    base_mint: string;
+    quote_mint: string;
+    openbook_program: string;
+    market: string;
+    request_queue: string;
+    event_queue: string;
+    bids: string;
+    asks: string;
+    market_vault_signer: string;
+    market_base_vault: string;
+    market_quote_vault: string;
+    amm_program: string;
+    amm_pool: string;
+    amm_authority: string;
+    amm_open_orders: string;
+    amm_lp_mint: string;
+    amm_base_vault: string;
+    amm_quote_vault: string;
+    amm_target_orders: string;
+    amm_config: string;
+    amm_create_fee_destination: string;
+    authority: string;
+    pool_state: string;
+    global_config: string;
+    base_vault: string;
+    quote_vault: string;
+    pool_lp_token: string;
+    spl_token_program: string;
+    associated_token_program: string;
+    system_program: string;
+    rent_program: string;
+    base_lot_size: number;
+    quote_lot_size: number;
+    market_vault_signer_nonce: number;
+};
+type IndexedRaydiumLaunchpadMigrateToCpswap = {
+    created_at: Date;
+    slot: number;
+    version: string;
+    first_signer: string;
+    first_signature: string;
+    all_signers: string[];
+    all_signatures: string[];
+    fee: number;
+    priority_fee: number;
+    index_in_slot: number;
+    bribe: number;
+    payer: string;
+    base_mint: string;
+    quote_mint: string;
+    platform_config: string;
+    cpswap_program: string;
+    cpswap_pool: string;
+    cpswap_authority: string;
+    cpswap_lp_mint: string;
+    cpswap_base_vault: string;
+    cpswap_quote_vault: string;
+    cpswap_config: string;
+    cpswap_create_pool_fee: string;
+    cpswap_observation: string;
+    lock_program: string;
+    lock_authority: string;
+    lock_lp_vault: string;
+    authority: string;
+    pool_state: string;
+    global_config: string;
+    base_vault: string;
+    quote_vault: string;
+    pool_lp_token: string;
+    base_token_program: string;
+    quote_token_program: string;
+    associated_token_program: string;
+    system_program: string;
+    rent_program: string;
+    metadata_program: string;
+};
+type RawGraduations = {
+    pumpswap_graduations: IndexedPumpFunGraduatedPool[];
+    raydium_amm_graduations: IndexedRaydiumLaunchpadMigrateToAmm[];
+    raydium_cpmm_graduations: IndexedRaydiumLaunchpadMigrateToCpswap[];
+};
 
 declare class SailfishApi {
     private baseUrl;
     constructor(baseUrl?: string);
+    private _valid_block_range;
+    fetchLatestBlock(): Promise<number | Error>;
     fetchPoolInfo(address: string): Promise<PoolInfo | Error>;
     fetchTokenInfo(address: string): Promise<TokenInfo | Error>;
+    fetchTrades(query: TradesQuery): Promise<Record<string, Trade[]> | Error>;
+    fetchRawGraduations(query: GraduatedPoolsQuery): Promise<RawGraduations | Error>;
 }
 
 declare const DEFAULT_QUOTE_TOKEN_ADDRESSES: string[];
@@ -208,4 +357,4 @@ declare class SailfishWebsocket {
 declare const PRODUCTION_API_URL = "https://sailfish.0xfire.com";
 declare const PRODUCTION_WS_URL = "wss://sailfish.0xfire.com/stream/public/ws";
 
-export { BONDING_CURVE_POOL_TYPES, DEFAULT_QUOTE_TOKEN_ADDRESSES, type Filter, type InstructionPosition, PRODUCTION_API_URL, PRODUCTION_WS_URL, type PoolInfo, type PoolInit, PoolType, Sailfish, SailfishApi, type SailfishCallbacks, SailfishEventResource, SailfishEventType, type SailfishMessage, SailfishWebsocket, type SolTxData, type TokenInfo, type TokenInit, type TokenMint, type Trade, type TradeIndex, type TradeRaw, amountToFloatString, getQuoteAndBaseTokenInfos, getTradeData };
+export { BONDING_CURVE_POOL_TYPES, DEFAULT_QUOTE_TOKEN_ADDRESSES, type Filter, type GraduatedPoolsQuery, type IndexedPumpFunGraduatedPool, type IndexedRaydiumLaunchpadMigrateToAmm, type IndexedRaydiumLaunchpadMigrateToCpswap, type InstructionPosition, PRODUCTION_API_URL, PRODUCTION_WS_URL, type PoolInfo, type PoolInit, PoolType, type RawGraduations, Sailfish, SailfishApi, type SailfishCallbacks, SailfishEventResource, SailfishEventType, type SailfishMessage, SailfishWebsocket, type SolTxData, type TokenInfo, type TokenInit, type TokenMint, type Trade, type TradeIndex, type TradeRaw, type TradesQuery, amountToFloatString, getQuoteAndBaseTokenInfos, getTradeData };
