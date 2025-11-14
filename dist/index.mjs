@@ -14,8 +14,6 @@ var SailfishEventResource = /* @__PURE__ */ ((SailfishEventResource2) => {
   return SailfishEventResource2;
 })(SailfishEventResource || {});
 var PoolType = /* @__PURE__ */ ((PoolType2) => {
-  PoolType2["UniswapV2"] = "UniswapV2";
-  PoolType2["UniswapV3"] = "UniswapV3";
   PoolType2["RaydiumAmm"] = "RaydiumAmm";
   PoolType2["RaydiumCpmm"] = "RaydiumCpmm";
   PoolType2["RaydiumClmm"] = "RaydiumClmm";
@@ -24,8 +22,6 @@ var PoolType = /* @__PURE__ */ ((PoolType2) => {
   PoolType2["PumpFunAmm"] = "PumpFunAmm";
   PoolType2["MeteoraDyn"] = "MeteoraDyn";
   PoolType2["MeteoraDynV2"] = "MeteoraDynV2";
-  PoolType2["AerodromeV2"] = "AerodromeV2";
-  PoolType2["AerodromeV3"] = "AerodromeV3";
   return PoolType2;
 })(PoolType || {});
 
@@ -42,22 +38,6 @@ var SailfishApi = class {
   constructor(baseUrl = PRODUCTION_API_URL) {
     this.baseUrl = baseUrl;
   }
-  _valid_block_range(from_block, to_block, max_range = 1e3) {
-    if (from_block >= to_block) {
-      return new Error("from_block must be less than to_block");
-    }
-    if (from_block < 0) {
-      return new Error("from_block must be greater than 0");
-    }
-    if (to_block < 0) {
-      return new Error("to_block must be greater than 0");
-    }
-    const range = to_block - from_block;
-    if (range > max_range) {
-      return new Error(`block range must be less or equal to ${max_range} blocks`);
-    }
-    return true;
-  }
   async fetchLatestBlock() {
     const url = `${this.baseUrl}/tick`;
     const response = await axios.get(url, AXIOS_CONFIG);
@@ -67,7 +47,7 @@ var SailfishApi = class {
     return response.data;
   }
   async fetchPoolInfo(address) {
-    const url = `${this.baseUrl}/pools/info`;
+    const url = `${this.baseUrl}/sailfish/pools/query`;
     const response = await axios.post(url, address, AXIOS_CONFIG);
     if (response.status !== 200) {
       return new Error(`Failed to fetch pool info: ${response.statusText}`);
@@ -75,7 +55,7 @@ var SailfishApi = class {
     return response.data;
   }
   async fetchTokenInfo(address) {
-    const url = `${this.baseUrl}/tokens/info`;
+    const url = `${this.baseUrl}/sailfish/tokens/query`;
     const response = await axios.post(url, address, AXIOS_CONFIG);
     if (response.status !== 200) {
       return new Error(`Failed to fetch token info: ${response.statusText}`);
@@ -83,23 +63,22 @@ var SailfishApi = class {
     return response.data;
   }
   async fetchTrades(query) {
-    const validation_error = this._valid_block_range(query.from_block, query.to_block);
-    if (validation_error instanceof Error) {
-      return validation_error;
+    const url = `${this.baseUrl}/sailfish/trades/query`;
+    try {
+      const response = await axios.post(url, query, AXIOS_CONFIG);
+      if (response.status !== 200) {
+        return new Error(`Failed to fetch trades: ${response.statusText}`);
+      }
+      return response.data;
+    } catch (error) {
+      if (error instanceof Error) {
+        return error;
+      }
+      return new Error(`Unexpected error: ${error}`);
     }
-    const url = `${this.baseUrl}/trades`;
-    const response = await axios.post(url, query, AXIOS_CONFIG);
-    if (response.status !== 200) {
-      return new Error(`Failed to fetch trades: ${response.statusText}`);
-    }
-    return response.data;
   }
   async fetchRawGraduations(query) {
-    const validation_error = this._valid_block_range(query.from_block, query.to_block, 1e5);
-    if (validation_error instanceof Error) {
-      return validation_error;
-    }
-    const url = `${this.baseUrl}/graduations/raw`;
+    const url = `${this.baseUrl}/sailfish/graduated_pools_raw/query`;
     try {
       const response = await axios.post(url, query, AXIOS_CONFIG);
       if (response.status !== 200) {

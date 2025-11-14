@@ -20,8 +20,6 @@ declare enum SailfishEventResource {
     TradesRaw = "trades-raw"
 }
 declare enum PoolType {
-    UniswapV2 = "UniswapV2",
-    UniswapV3 = "UniswapV3",
     RaydiumAmm = "RaydiumAmm",
     RaydiumCpmm = "RaydiumCpmm",
     RaydiumClmm = "RaydiumClmm",
@@ -29,9 +27,7 @@ declare enum PoolType {
     PumpSwapAmm = "PumpSwapAmm",
     PumpFunAmm = "PumpFunAmm",
     MeteoraDyn = "MeteoraDyn",
-    MeteoraDynV2 = "MeteoraDynV2",
-    AerodromeV2 = "AerodromeV2",
-    AerodromeV3 = "AerodromeV3"
+    MeteoraDynV2 = "MeteoraDynV2"
 }
 type SailfishMessage = {
     type: SailfishEventType;
@@ -138,15 +134,20 @@ type TokenMint = {
     mint_authority: string | null;
 };
 type TradesQuery = {
-    from_block: number;
-    to_block: number;
-    pool_addresses: string[];
-};
-type GraduatedPoolsQuery = {
-    from_block: number;
-    to_block: number;
+    lower_tick: number;
+    upper_tick: number;
     pool_types: PoolType[];
     pool_addresses: string[];
+    token_addresses: string[];
+    to_wallets: string[];
+    from_wallets: string[];
+};
+type GraduatedPoolsQuery = {
+    lower_tick: number;
+    upper_tick: number;
+    pool_types: PoolType[];
+    pool_addresses: string[];
+    token_addresses: string[];
 };
 type IndexedPumpFunGraduatedPool = {
     created_at: Date;
@@ -284,7 +285,6 @@ type RawGraduations = {
 declare class SailfishApi {
     private baseUrl;
     constructor(baseUrl?: string);
-    private _valid_block_range;
     fetchLatestBlock(): Promise<number | Error>;
     fetchPoolInfo(address: string): Promise<PoolInfo | Error>;
     fetchTokenInfo(address: string): Promise<TokenInfo | Error>;
