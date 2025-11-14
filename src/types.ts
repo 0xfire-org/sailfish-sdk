@@ -23,8 +23,6 @@ export enum SailfishEventResource {
 }
 
 export enum PoolType {
-  UniswapV2 = "UniswapV2",
-  UniswapV3 = "UniswapV3",
   RaydiumAmm = "RaydiumAmm",
   RaydiumCpmm = "RaydiumCpmm",
   RaydiumClmm = "RaydiumClmm",
@@ -33,8 +31,6 @@ export enum PoolType {
   PumpFunAmm = "PumpFunAmm",
   MeteoraDyn = "MeteoraDyn",
   MeteoraDynV2 = "MeteoraDynV2",
-  AerodromeV2 = "AerodromeV2",
-  AerodromeV3 = "AerodromeV3",
 }
 
 export type SailfishMessage = {
@@ -165,18 +161,23 @@ export type TokenMint = {
 }
 
 export type TradesQuery = {
-  from_block: number,
-  to_block: number,
+  lower_tick: number,
+  upper_tick: number,
+  pool_types: PoolType[],
   pool_addresses: string[],
+  token_addresses: string[],
+  to_wallets: string[],
+  from_wallets: string[],
 }
 
 export type GraduatedPoolsQuery = {
-  from_block: number,
-  to_block: number,
+  lower_tick: number,
+  upper_tick: number,
   pool_types: PoolType[],
   pool_addresses: string[],
+  token_addresses: string[],
+  // creator_addresses: string[],
 }
-
 
 export type IndexedPumpFunGraduatedPool = {
   created_at: Date,
