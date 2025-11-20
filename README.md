@@ -1,7 +1,9 @@
 # Sailfish SDK
 
-Sailfish SDK is a JavaScript/TypeScript SDK for interacting with the Sailfish API and WebSocket endpoints.  
-It allows you to fetch pool and token information, subscribe to updates, and listen to trades in real-time.
+Sailfish SDK is a JavaScript/TypeScript SDK for interacting with the Sailfish
+API and WebSocket endpoints.\
+It allows you to fetch pool and token information, subscribe to updates, and
+listen to trades in real-time.
 
 ---
 
@@ -28,6 +30,7 @@ npm link
 cd ../your-project
 npm link sailfish-sdk
 ```
+
 ---
 
 ### Example
@@ -53,13 +56,11 @@ const filter = {
   dex_types: [],
 };
 
-// ✅ UPDATED: Constructor now takes (callbacks, filter, apiUrl, wsUrl)
-const sailfish = new Sailfish(
+const sailfish = new Sailfish({
   callbacks,
   filter,
-  "http://sailfish.0xfire.com", // apiUrl
-  "ws://sailfish.0xfire.com"    // wsUrl
-);
+  apiKey: "...", // optional - if `undefined` will use the Free tier
+});
 
 async function example() {
   // Fetch pool info
@@ -78,7 +79,6 @@ async function example() {
     console.log("Token info:", token);
   }
 }
-
 
 example();
 ```

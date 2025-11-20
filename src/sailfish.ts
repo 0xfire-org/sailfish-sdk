@@ -15,7 +15,7 @@ import {
 
 import { SailfishApi } from "./api";
 import { SailfishWebsocket } from "./websocket";
-import { PRODUCTION_WS_URL, PRODUCTION_API_URL } from "./constants";
+import { SailfishTier } from "./tier";
 
 export const DEFAULT_QUOTE_TOKEN_ADDRESSES: string[] = [
   "11111111111111111111111111111111", // SOL
@@ -78,25 +78,48 @@ export function getQuoteAndBaseTokenInfos(token0Info: TokenInfo, token1Info: Tok
   throw new Error(`No supported quote token found for ${token0Info.address} and ${token1Info.address}`);
 }
 
+type SailfishInit =
+  | { filter: Filter, callbacks: SailfishCallbacks, tier: SailfishTier }
+  | { filter: Filter, callbacks: SailfishCallbacks, apiKey: string }
+  | { filter: Filter, callbacks: SailfishCallbacks }
+  ;
+
 export class Sailfish {
+  private tier: SailfishTier;
+
   private filter: Filter;
-  private wsUrl: string;
-  private ws: SailfishWebsocket | null = null;
-  private api: SailfishApi;
-  private poolInfos: Record<string, PoolInfo>;
-  private tokenInfos: Record<string, TokenInfo>;
   private callbacks: SailfishCallbacks;
 
-  constructor(
-    callbacks: SailfishCallbacks,
-    filter: Filter,
-    apiUrl: string = PRODUCTION_API_URL,
-    wsUrl: string = PRODUCTION_WS_URL,
-  ) {
-    this.api = new SailfishApi(apiUrl);
-    this.callbacks = callbacks;
+  private api: SailfishApi;
+  private ws: SailfishWebsocket | null;
+
+  private poolInfos: Record<string, PoolInfo>;
+  private tokenInfos: Record<string, TokenInfo>;
+
+  constructor({
+    filter,
+    callbacks,
+    ...init
+  }: SailfishInit) {
+    const tier = (() => {
+      if ("tier" in init && SailfishTier.is(init.tier)) {
+        return init.tier;
+      }
+      if ("apiKey" in init && typeof init.apiKey === "string") {
+        const { apiKey } = init;
+        return SailfishTier.basic({ apiKey });
+      }
+      return SailfishTier.free();
+    })();
+
+    this.tier = tier;
+
     this.filter = filter;
-    this.wsUrl = wsUrl;
+    this.callbacks = callbacks;
+
+    this.api = new SailfishApi({ tier });
+    this.ws = null;
+
     this.poolInfos = {};
     this.tokenInfos = {};
   }
@@ -110,14 +133,13 @@ export class Sailfish {
       return;
     }
 
-    this.ws = new SailfishWebsocket(
-      this.wsUrl,
-      "sailfish-ws",
-      this.filter,
-      (message: SailfishMessage) => { this.onMessage(message) },
-    );
+    this.ws = new SailfishWebsocket({
+      tier: this.tier,
+      botName: "sailfish-ws",
+      filter: this.filter,
+      callback: (message: SailfishMessage) => { this.onMessage(message) },
+    });
   }
-
 
   public rest() {
     if (this.ws === null) {
@@ -314,5 +336,4 @@ export class Sailfish {
   public getFilter(): Filter {
     return this.filter;
   }
-
 }
