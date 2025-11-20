@@ -3,7 +3,7 @@ import { SailfishWebsocket } from '../src/websocket';
 import { SailfishEventResource, TokenInit, TokenMint, PoolInit, TradeRaw, SailfishMessage } from '../src/types';
 import { SailfishTier } from '../src/tier';
 
-describe('SailfishWebsocket', () => {
+describe.sequential('SailfishWebsocket', () => {
   const tier = SailfishTier.legacy();
   // const tier = SailfishTier.free();
 
@@ -33,6 +33,12 @@ describe('SailfishWebsocket', () => {
 
     expect(ws.enabled).toEqual(true);
     expect(ws.connected).toEqual(true);
+    expect(ws.connecting).toEqual(false);
+
+    ws.stop();
+
+    expect(ws.enabled).toEqual(false);
+    expect(ws.connected).toEqual(false);
     expect(ws.connecting).toEqual(false);
   }, TEST_TIMEOUT);
 
