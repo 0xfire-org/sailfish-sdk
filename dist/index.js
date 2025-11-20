@@ -32,13 +32,12 @@ var index_exports = {};
 __export(index_exports, {
   BONDING_CURVE_POOL_TYPES: () => BONDING_CURVE_POOL_TYPES,
   DEFAULT_QUOTE_TOKEN_ADDRESSES: () => DEFAULT_QUOTE_TOKEN_ADDRESSES,
-  PRODUCTION_API_URL: () => PRODUCTION_API_URL,
-  PRODUCTION_WS_URL: () => PRODUCTION_WS_URL,
   PoolType: () => PoolType,
   Sailfish: () => Sailfish,
   SailfishApi: () => SailfishApi,
   SailfishEventResource: () => SailfishEventResource,
   SailfishEventType: () => SailfishEventType,
+  SailfishTier: () => SailfishTier,
   SailfishWebsocket: () => SailfishWebsocket,
   amountToFloatString: () => amountToFloatString,
   getQuoteAndBaseTokenInfos: () => getQuoteAndBaseTokenInfos,
@@ -76,83 +75,144 @@ var PoolType = /* @__PURE__ */ ((PoolType2) => {
 // src/api.ts
 var import_axios = __toESM(require("axios"));
 
-// src/constants.ts
-var PRODUCTION_API_URL = "https://sailfish.0xfire.com";
-var PRODUCTION_WS_URL = "wss://sailfish.0xfire.com/stream/public/ws";
+// src/tier.ts
+var SailfishTier = {
+  is(value) {
+    return SailfishTier.isFree(value) || SailfishTier.isBasic(value) || SailfishTier.isLegacy(value);
+  },
+  free() {
+    return { type: "free" };
+  },
+  isFree(value) {
+    return _hasType(value) && value.type === "free";
+  },
+  basic({ apiKey }) {
+    return { type: "basic", apiKey };
+  },
+  isBasic(value) {
+    return _hasType(value) && value.type === "basic" && _hasApiKey(value);
+  },
+  legacy({ baseUrl } = {}) {
+    return { type: "legacy", baseUrl };
+  },
+  isLegacy(value) {
+    return _hasType(value) && value.type === "legacy" && _hasPropStringOrUndefined(value, "baseUrl");
+  },
+  wsBaseUrl(tier) {
+    let { baseUrl, authHeaders } = SailfishTier.httpBaseUrl(tier);
+    baseUrl = baseUrl.replace("https://", "wss://").replace("http://", "ws://");
+    return { baseUrl, authHeaders };
+  },
+  httpBaseUrl(tier) {
+    var _a;
+    if (SailfishTier.isFree(tier)) {
+      return {
+        baseUrl: "https://free.sailfish.solanavibestation.com",
+        authHeaders: {}
+      };
+    }
+    if (SailfishTier.isBasic(tier)) {
+      return {
+        baseUrl: "https://basic.sailfish.solanavibestation.com",
+        authHeaders: { "Authorization": tier.apiKey }
+      };
+    }
+    if (SailfishTier.isLegacy(tier)) {
+      return {
+        baseUrl: (_a = tier.baseUrl) != null ? _a : "https://sailfish.0xfire.com",
+        authHeaders: {}
+      };
+    }
+    const _exhaustiveCheck = tier;
+    throw new Error(`Unsupported tier: ${JSON.stringify(tier)}`);
+  }
+};
+function _hasType(value) {
+  return _hasPropString(value, "type");
+}
+function _hasApiKey(value) {
+  return _hasPropString(value, "apiKey");
+}
+function _hasPropString(value, prop) {
+  return _hasPropStringOrUndefined(value, prop) && typeof value[prop] !== "undefined";
+}
+function _hasPropStringOrUndefined(value, prop) {
+  if (typeof value !== "object") return false;
+  if (value === null) return false;
+  if (!(prop in value)) return false;
+  const propValue = value[prop];
+  if (typeof propValue === "undefined") {
+  } else if (typeof propValue === "string") {
+  } else {
+    return false;
+  }
+  ;
+  return true;
+}
 
 // src/api.ts
-var AXIOS_CONFIG = { headers: { "Content-Type": "application/json" }, timeout: 10 * 60 * 1e3 };
 var SailfishApi = class {
-  constructor(baseUrl = PRODUCTION_API_URL) {
+  constructor({ tier }) {
+    const { baseUrl, authHeaders } = SailfishTier.httpBaseUrl(tier);
+    this.tier = tier;
     this.baseUrl = baseUrl;
+    this.authHeaders = authHeaders;
   }
   async fetchLatestBlock() {
-    const url = `${this.baseUrl}/tick`;
-    const response = await import_axios.default.get(url, AXIOS_CONFIG);
-    if (response.status !== 200) {
-      return new Error(`Failed to fetch latest block: ${response.statusText}`);
-    }
-    return response.data;
+    return this.httpRequest("GET", "/tick");
   }
   async fetchPoolInfo(address) {
-    const url = `${this.baseUrl}/sailfish/pools/query`;
-    const response = await import_axios.default.post(url, address, AXIOS_CONFIG);
-    if (response.status !== 200) {
-      return new Error(`Failed to fetch pool info: ${response.statusText}`);
-    }
-    return response.data;
+    return this.httpRequest("POST", "/sailfish/pools/query", address);
   }
   async fetchTokenInfo(address) {
-    const url = `${this.baseUrl}/sailfish/tokens/query`;
-    const response = await import_axios.default.post(url, address, AXIOS_CONFIG);
-    if (response.status !== 200) {
-      return new Error(`Failed to fetch token info: ${response.statusText}`);
-    }
-    return response.data;
+    return this.httpRequest("POST", "/sailfish/tokens/query", address);
   }
   async fetchTrades(query) {
-    const url = `${this.baseUrl}/sailfish/trades/query`;
-    try {
-      const response = await import_axios.default.post(url, query, AXIOS_CONFIG);
-      if (response.status !== 200) {
-        return new Error(`Failed to fetch trades: ${response.statusText}`);
-      }
-      return response.data;
-    } catch (error) {
-      if (error instanceof Error) {
-        return error;
-      }
-      return new Error(`Unexpected error: ${error}`);
-    }
+    return this.httpRequest("POST", "/sailfish/trades/query", query);
   }
   async fetchRawGraduations(query) {
-    const url = `${this.baseUrl}/sailfish/graduated_pools_raw/query`;
-    try {
-      const response = await import_axios.default.post(url, query, AXIOS_CONFIG);
-      if (response.status !== 200) {
-        return new Error(`Failed to fetch raw graduations: ${response.statusText}`);
-      }
-      return response.data;
-    } catch (error) {
-      return new Error(`Failed to fetch graduated pools: ${error instanceof Error ? error.message : String(error)}`);
+    return this.httpRequest("POST", "/sailfish/graduated_pools_raw/query", query);
+  }
+  async httpRequest(method, path, data) {
+    const response = await import_axios.default.request({
+      method,
+      url: this.baseUrl + path,
+      data,
+      headers: {
+        "Content-Type": "application/json",
+        ...this.authHeaders
+      },
+      timeout: 10 * 60 * 1e3
+    });
+    if (response.status !== 200) {
+      throw new Error(`Failed to fetch latest block: ${response.statusText}`);
     }
+    return response.data;
   }
 };
 
 // src/websocket.ts
 var import_isomorphic_ws = __toESM(require("isomorphic-ws"));
 var SailfishWebsocket = class {
-  constructor(ws_url, botName, filter, callback) {
+  constructor({
+    tier,
+    botName,
+    filter,
+    callback
+  }) {
+    this.enabled = true;
+    this.connecting = false;
+    this.connected = false;
     this.socket = null;
     this.reconnectAttempts = 0;
     this.reconnecting = false;
     this.maxReconnects = 50;
     this.reconnectDelay = 1e3;
-    this.enabled = true;
-    this.connecting = false;
-    this.connected = false;
+    const { baseUrl, authHeaders } = SailfishTier.wsBaseUrl(tier);
+    this.tier = tier;
+    this.baseUrl = baseUrl;
+    this.authHeaders = authHeaders;
     this.botName = botName;
-    this.ws_url = ws_url;
     this.filter = filter;
     this.callback = callback;
     this._start();
@@ -169,8 +229,12 @@ var SailfishWebsocket = class {
     }
     this.reconnectAttempts++;
     this.connecting = true;
-    console.log(`Connecting to ${this.ws_url} for ${this.botName}, attempt ${this.reconnectAttempts}`);
-    this.socket = new import_isomorphic_ws.default(this.ws_url);
+    console.log(`Connecting to ${this.baseUrl} for ${this.botName}, attempt ${this.reconnectAttempts}`);
+    this.socket = new import_isomorphic_ws.default(this.baseUrl + "/stream/public/ws", {
+      headers: {
+        ...this.authHeaders
+      }
+    });
     this.socket.addEventListener("open", this.onOpen.bind(this));
     this.socket.addEventListener("message", this.onMessage.bind(this));
     this.socket.addEventListener("close", this.onClose.bind(this));
@@ -178,7 +242,7 @@ var SailfishWebsocket = class {
   }
   onOpen() {
     var _a;
-    console.log(`Connected to ${this.ws_url} for ${this.botName}`);
+    console.log(`Connected to ${this.baseUrl} for ${this.botName}`);
     this.connected = true;
     this.connecting = false;
     this.reconnecting = false;
@@ -285,12 +349,26 @@ function getQuoteAndBaseTokenInfos(token0Info, token1Info, supportedQuoteTokens 
   throw new Error(`No supported quote token found for ${token0Info.address} and ${token1Info.address}`);
 }
 var Sailfish = class {
-  constructor(callbacks, filter, apiUrl = PRODUCTION_API_URL, wsUrl = PRODUCTION_WS_URL) {
-    this.ws = null;
-    this.api = new SailfishApi(apiUrl);
-    this.callbacks = callbacks;
+  constructor({
+    filter,
+    callbacks,
+    ...init
+  }) {
+    const tier = (() => {
+      if ("tier" in init && SailfishTier.is(init.tier)) {
+        return init.tier;
+      }
+      if ("apiKey" in init && typeof init.apiKey === "string") {
+        const { apiKey } = init;
+        return SailfishTier.basic({ apiKey });
+      }
+      return SailfishTier.free();
+    })();
+    this.tier = tier;
     this.filter = filter;
-    this.wsUrl = wsUrl;
+    this.callbacks = callbacks;
+    this.api = new SailfishApi({ tier });
+    this.ws = null;
     this.poolInfos = {};
     this.tokenInfos = {};
   }
@@ -301,14 +379,14 @@ var Sailfish = class {
     if (this.ws !== null) {
       return;
     }
-    this.ws = new SailfishWebsocket(
-      this.wsUrl,
-      "sailfish-ws",
-      this.filter,
-      (message) => {
+    this.ws = new SailfishWebsocket({
+      tier: this.tier,
+      botName: "sailfish-ws",
+      filter: this.filter,
+      callback: (message) => {
         this.onMessage(message);
       }
-    );
+    });
   }
   rest() {
     if (this.ws === null) {
@@ -479,13 +557,12 @@ var Sailfish = class {
 0 && (module.exports = {
   BONDING_CURVE_POOL_TYPES,
   DEFAULT_QUOTE_TOKEN_ADDRESSES,
-  PRODUCTION_API_URL,
-  PRODUCTION_WS_URL,
   PoolType,
   Sailfish,
   SailfishApi,
   SailfishEventResource,
   SailfishEventType,
+  SailfishTier,
   SailfishWebsocket,
   amountToFloatString,
   getQuoteAndBaseTokenInfos,
