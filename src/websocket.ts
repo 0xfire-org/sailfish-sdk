@@ -1,31 +1,43 @@
+import { AuthHeaders, SailfishTier } from "./tier";
 import type { Filter, SailfishMessage } from "./types";
 import WebSocket from "isomorphic-ws";
 
 export class SailfishWebsocket {
+  public readonly botName: string;
+  public enabled: boolean = true;
+  public connecting: boolean = false;
+  public connected: boolean = false;
+
+  private readonly tier: SailfishTier;
+  private readonly baseUrl: string;
+  private readonly authHeaders: AuthHeaders;
+
+  private filter: Filter;
+  private callback: (message: SailfishMessage) => void;
+
   private socket: WebSocket | null = null;
   private reconnectAttempts: number = 0;
   private reconnecting: boolean = false;
   private readonly maxReconnects = 50;
   private readonly reconnectDelay = 1000;
 
-  public readonly botName: string;
-  public readonly ws_url: string;
-  public enabled: boolean = true;
-  public connecting: boolean = false;
-  public connected: boolean = false;
-
-  private callback: (message: SailfishMessage) => void;
-
-  private filter: Filter;
-
-  constructor(
-    ws_url: string,
+  constructor({
+    tier,
+    botName,
+    filter,
+    callback,
+  }: {
+    tier: SailfishTier,
     botName: string,
     filter: Filter,
     callback: (message: SailfishMessage) => void,
-  ) {
+  }) {
+    const { baseUrl, authHeaders } = SailfishTier.wsBaseUrl(tier);
+    this.tier = tier;
+    this.baseUrl = baseUrl;
+    this.authHeaders = authHeaders;
+
     this.botName = botName;
-    this.ws_url = ws_url;
     this.filter = filter;
     this.callback = callback;
     this._start();
@@ -46,9 +58,13 @@ export class SailfishWebsocket {
 
     this.reconnectAttempts++;
     this.connecting = true;
-    console.log(`Connecting to ${this.ws_url} for ${this.botName}, attempt ${this.reconnectAttempts}`);
+    console.log(`Connecting to ${this.baseUrl} for ${this.botName}, attempt ${this.reconnectAttempts}`);
 
-    this.socket = new WebSocket(this.ws_url);
+    this.socket = new WebSocket(this.baseUrl + "/stream/public/ws", {
+      headers: {
+        ...this.authHeaders,
+      },
+    });
     this.socket.addEventListener("open", this.onOpen.bind(this));
     this.socket.addEventListener("message", this.onMessage.bind(this));
     this.socket.addEventListener("close", this.onClose.bind(this));
@@ -56,7 +72,7 @@ export class SailfishWebsocket {
   }
 
   private onOpen() {
-    console.log(`Connected to ${this.ws_url} for ${this.botName}`);
+    console.log(`Connected to ${this.baseUrl} for ${this.botName}`);
     this.connected = true;
     this.connecting = false;
     this.reconnecting = false;
