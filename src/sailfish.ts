@@ -109,7 +109,7 @@ export class Sailfish {
         const { apiKey } = init;
         return SailfishTier.basic({ apiKey });
       }
-      return SailfishTier.free();
+      return SailfishTier.legacy();
     })();
 
     this.tier = tier;
