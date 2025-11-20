@@ -183,7 +183,14 @@ var SailfishWebsocket = class {
     this.reconnectAttempts++;
     this.connecting = true;
     console.log(`Connecting to ${this.baseUrl} for ${this.botName}, attempt ${this.reconnectAttempts}`);
-    this.socket = new WebSocket(this.baseUrl + "/stream/public/ws", {
+    const path = (() => {
+      if (SailfishTier.isLegacy(this.tier)) {
+        return "/stream/public/ws";
+      } else {
+        return "/public/ws";
+      }
+    })();
+    this.socket = new WebSocket(this.baseUrl + path, {
       headers: {
         ...this.authHeaders
       }
