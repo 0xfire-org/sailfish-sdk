@@ -39,27 +39,22 @@ npm link sailfish-sdk
 import { Sailfish } from "sailfish-sdk";
 import { DEFAULT_QUOTE_TOKEN_ADDRESSES } from "sailfish-sdk";
 
-// Example callbacks
-const callbacks = {
-  onMessage: (msg) => console.log("Message:", msg),
-  onTokenInit: (token) => console.log("Token Init:", token),
-  onTokenMint: (mint) => console.log("Token Mint:", mint),
-  onTokenGraduate: (poolInit) => console.log("Token Graduate:", poolInit),
-  onPoolInit: (poolInit) => console.log("Pool Init:", poolInit),
-  onTradeRaw: (tradeRaw) => console.log("Trade Raw:", tradeRaw),
-  onTrade: (trade) => console.log("Trade:", trade),
-};
-
-const filter = {
-  token_addresses: DEFAULT_QUOTE_TOKEN_ADDRESSES,
-  pool_addresses: [],
-  dex_types: [],
-};
-
 const sailfish = new Sailfish({
-  callbacks,
-  filter,
-  apiKey: "...", // optional - if `undefined` will use the Free tier
+  // apiKey: "...", // optional - if `undefined` will use the Free tier
+  filter: {
+    token_addresses: DEFAULT_QUOTE_TOKEN_ADDRESSES,
+    pool_addresses: [],
+    dex_types: [],
+  },
+  callbacks: {
+    onMessage: (msg) => console.log("Message:", msg),
+    onTokenInit: (token) => console.log("Token Init:", token),
+    onTokenMint: (mint) => console.log("Token Mint:", mint),
+    onTokenGraduate: (poolInit) => console.log("Token Graduate:", poolInit),
+    onPoolInit: (poolInit) => console.log("Pool Init:", poolInit),
+    onTradeRaw: (tradeRaw) => console.log("Trade Raw:", tradeRaw),
+    onTrade: (trade) => console.log("Trade:", trade),
+  },
 });
 
 async function example() {
