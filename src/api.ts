@@ -1,69 +1,55 @@
-import axios from "axios";
+import axios, { Method } from "axios";
 import type { PoolInfo, TokenInfo, TradesQuery, Trade, GraduatedPoolsQuery, RawGraduations } from "./types";
-import { PRODUCTION_API_URL } from "./constants";
+import { AuthHeaders, SailfishTier } from "./tier";
 
-const AXIOS_CONFIG = { headers: { "Content-Type": "application/json" }, timeout: 10 * 60 * 1000 };
 export class SailfishApi {
-  private baseUrl: string;
-  constructor(
-    baseUrl: string = PRODUCTION_API_URL,
-  ) {
+  private readonly tier: SailfishTier;
+  private readonly baseUrl: string;
+  private readonly authHeaders: AuthHeaders;
+
+  constructor({ tier }: { tier: SailfishTier }) {
+    const { baseUrl, authHeaders } = SailfishTier.httpBaseUrl(tier);
+    this.tier = tier;
     this.baseUrl = baseUrl;
+    this.authHeaders = authHeaders;
   }
 
-  public async fetchLatestBlock(): Promise<number | Error> {
-    const url = `${this.baseUrl}/tick`;
-    const response = await axios.get<number>(url, AXIOS_CONFIG);
+  public async fetchLatestBlock(): Promise<number> {
+    return this.httpRequest("GET", "/tick");
+  }
+
+  public async fetchPoolInfo(address: string): Promise<PoolInfo> {
+    return this.httpRequest("POST", "/sailfish/pools/query", address);
+  }
+
+  public async fetchTokenInfo(address: string): Promise<TokenInfo> {
+    return this.httpRequest("POST", "/sailfish/tokens/query", address);
+  }
+
+  public async fetchTrades(query: TradesQuery): Promise<Record<string, Trade[]>> {
+    return this.httpRequest("POST", "/sailfish/trades/query", query);
+  }
+
+  public async fetchRawGraduations(query: GraduatedPoolsQuery): Promise<RawGraduations> {
+    return this.httpRequest("POST", "/sailfish/graduated_pools_raw/query", query);
+  }
+
+  async httpRequest<ReqData, ResData>(method: Method, path: string, data?: ReqData): Promise<ResData> {
+    const response = await axios.request({
+      method,
+      url: this.baseUrl + path,
+      data,
+      headers: {
+        "Content-Type": "application/json",
+        ...this.authHeaders,
+      },
+      timeout: 10 * 60 * 1000,
+    });
+
     if (response.status !== 200) {
-      return new Error(`Failed to fetch latest block: ${response.statusText}`);
+      throw new Error(`Failed to fetch latest block: ${response.statusText}`);
     }
+
     return response.data;
-  }
-
-  public async fetchPoolInfo(address: string): Promise<PoolInfo | Error> {
-    const url = `${this.baseUrl}/sailfish/pools/query`;
-    const response = await axios.post<PoolInfo>(url, address, AXIOS_CONFIG);
-    if (response.status !== 200) {
-      return new Error(`Failed to fetch pool info: ${response.statusText}`);
-    }
-    return response.data;
-  }
-
-  public async fetchTokenInfo(address: string): Promise<TokenInfo | Error> {
-    const url = `${this.baseUrl}/sailfish/tokens/query`;
-    const response = await axios.post<TokenInfo>(url, address, AXIOS_CONFIG);
-    if (response.status !== 200) {
-      return new Error(`Failed to fetch token info: ${response.statusText}`);
-    }
-    return response.data;
-  }
-
-  public async fetchTrades(query: TradesQuery): Promise<Record<string, Trade[]> | Error> {
-    const url = `${this.baseUrl}/sailfish/trades/query`;
-    try {
-      const response = await axios.post<Record<string, Trade[]>>(url, query, AXIOS_CONFIG);
-      if (response.status !== 200) {
-        return new Error(`Failed to fetch trades: ${response.statusText}`);
-      }
-      return response.data as Record<string, Trade[]>;
-    } catch (error) {
-      if (error instanceof Error) {
-        return error;
-      }
-      return new Error(`Unexpected error: ${error}`);
-    }
-  }
-
-  public async fetchRawGraduations(query: GraduatedPoolsQuery): Promise<RawGraduations | Error> {
-    const url = `${this.baseUrl}/sailfish/graduated_pools_raw/query`;
-    try {
-      const response = await axios.post<RawGraduations>(url, query, AXIOS_CONFIG);
-      if (response.status !== 200) {
-        return new Error(`Failed to fetch raw graduations: ${response.statusText}`);
-      }
-      return response.data as RawGraduations;
-    } catch (error) {
-      return new Error(`Failed to fetch graduated pools: ${error instanceof Error ? error.message : String(error)}`);
-    }
   }
 }
