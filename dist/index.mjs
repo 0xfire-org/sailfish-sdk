@@ -322,7 +322,7 @@ var Sailfish = class {
         const { apiKey } = init;
         return SailfishTier.basic({ apiKey });
       }
-      return SailfishTier.free();
+      return SailfishTier.legacy();
     })();
     this.tier = tier;
     this.filter = filter;
