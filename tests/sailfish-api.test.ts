@@ -1,14 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { SailfishApi } from '../src/api';
 import { GraduatedPoolsQuery, TradesQuery, PoolType } from '../src/types';
-import { SailfishTier } from '../src/tier';
+import { testTiers } from './utils';
 
-describe('SailfishApi', () => {
-  const tier = SailfishTier.legacy();
-  // const tier = SailfishTier.free();
-
-  console.log("SailfishTier: ", tier);
-
+describe.each(testTiers())('SailfishApi ($type)', ({ type, tier }) => {
   const api = new SailfishApi({ tier });
 
   it('should fetch latest block', async () => {

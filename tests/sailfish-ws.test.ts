@@ -1,13 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { SailfishWebsocket } from '../src/websocket';
 import { SailfishEventResource, TokenInit, TokenMint, PoolInit, TradeRaw, SailfishMessage } from '../src/types';
-import { SailfishTier } from '../src/tier';
+import { testTiers } from './utils';
 
-describe.sequential('SailfishWebsocket', () => {
-  const tier = SailfishTier.legacy();
-  // const tier = SailfishTier.free();
-
-  console.log("SailfishTier: ", tier);
+describe.sequential.each(testTiers())('SailfishWebsocket ($type)', ({ type, tier }) => {
 
   const TEST_TIMEOUT = 1 * 60 * 1000; // 1min
 
