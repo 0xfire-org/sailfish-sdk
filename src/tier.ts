@@ -1,12 +1,12 @@
-export type SailfishTierFree = { type: "free" };
+export type SailfishTierFree = { type: "free", apiKey: string };
 export type SailfishTierBasic = { type: "basic", apiKey: string };
-export type SailfishTierLegacy = { type: "legacy", baseUrl?: string };
 
 export type SailfishTier =
   | SailfishTierFree
   | SailfishTierBasic
-  | SailfishTierLegacy
   ;
+
+export type SailfishTierType = SailfishTier['type'];
 
 export type AuthHeaders = Record<string, string>;
 
@@ -15,26 +15,19 @@ export const SailfishTier = {
     return false
       || SailfishTier.isFree(value)
       || SailfishTier.isBasic(value)
-      || SailfishTier.isLegacy(value)
       ;
   },
-  free(): SailfishTierFree {
-    return { type: "free" };
-  },
-  isFree(value: unknown): value is SailfishTierFree {
-    return _hasType(value) && value.type === "free";
+  free({ apiKey }: { apiKey: string }): SailfishTierFree {
+    return { type: "free", apiKey };
   },
   basic({ apiKey }: { apiKey: string }): SailfishTierBasic {
     return { type: "basic", apiKey };
   },
+  isFree(value: unknown): value is SailfishTierFree {
+    return _hasType(value) && value.type === "free" && _hasApiKey(value);
+  },
   isBasic(value: unknown): value is SailfishTierBasic {
     return _hasType(value) && value.type === "basic" && _hasApiKey(value);
-  },
-  legacy({ baseUrl }: { baseUrl?: string } = {}): SailfishTierLegacy {
-    return { type: "legacy", baseUrl };
-  },
-  isLegacy(value: unknown): value is SailfishTierLegacy {
-    return _hasType(value) && value.type === "legacy" && _hasPropStringOrUndefined(value, "baseUrl");
   },
   wsBaseUrl(tier: SailfishTier): { baseUrl: string, authHeaders: AuthHeaders } {
     let { baseUrl, authHeaders } = SailfishTier.httpBaseUrl(tier);
@@ -49,7 +42,7 @@ export const SailfishTier = {
     if (SailfishTier.isFree(tier)) {
       return {
         baseUrl: "https://free.sailfish.solanavibestation.com",
-        authHeaders: {},
+        authHeaders: { "Authorization": tier.apiKey },
       };
     }
 
@@ -58,13 +51,6 @@ export const SailfishTier = {
         baseUrl: "https://basic.sailfish.solanavibestation.com",
         authHeaders: { "Authorization": tier.apiKey },
       };
-    }
-
-    if (SailfishTier.isLegacy(tier)) {
-      return {
-        baseUrl: tier.baseUrl ?? "https://sailfish.0xfire.com",
-        authHeaders: {},
-      }
     }
 
     const _exhaustiveCheck: never = tier;
