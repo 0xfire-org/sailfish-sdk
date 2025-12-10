@@ -80,8 +80,6 @@ export function getQuoteAndBaseTokenInfos(token0Info: TokenInfo, token1Info: Tok
 
 type SailfishInit =
   | { filter: Filter, callbacks: SailfishCallbacks, tier: SailfishTier }
-  | { filter: Filter, callbacks: SailfishCallbacks, apiKey: string }
-  | { filter: Filter, callbacks: SailfishCallbacks }
   ;
 
 export class Sailfish {
@@ -97,21 +95,10 @@ export class Sailfish {
   private tokenInfos: Record<string, TokenInfo>;
 
   constructor({
+    tier,
     filter,
     callbacks,
-    ...init
   }: SailfishInit) {
-    const tier = (() => {
-      if ("tier" in init && SailfishTier.is(init.tier)) {
-        return init.tier;
-      }
-      if ("apiKey" in init && typeof init.apiKey === "string") {
-        const { apiKey } = init;
-        return SailfishTier.basic({ apiKey });
-      }
-      return SailfishTier.legacy();
-    })();
-
     this.tier = tier;
 
     this.filter = filter;

@@ -36,11 +36,13 @@ npm link sailfish-sdk
 ### Example
 
 ```ts
-import { Sailfish } from "sailfish-sdk";
+import { Sailfish, SailfishTier } from "sailfish-sdk";
 import { DEFAULT_QUOTE_TOKEN_ADDRESSES } from "sailfish-sdk";
 
 const sailfish = new Sailfish({
-  // apiKey: "...", // optional - if `undefined` will use the Free tier
+  tier: SailfishTier.free({ // <-- Switch between Free and Basic, based on your tier
+    apiKey: "...", // <-- Replace with your API_KEY
+  }),
   filter: {
     token_addresses: DEFAULT_QUOTE_TOKEN_ADDRESSES,
     pool_addresses: [],
