@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { SailfishApi } from '../src/api';
-import { PRODUCTION_API_URL } from '../src/constants';
 import { GraduatedPoolsQuery, TradesQuery, PoolType } from '../src/types';
+import { testTiers } from './utils';
 
-describe('SailfishApi', () => {
-  const api = new SailfishApi(PRODUCTION_API_URL);
+describe.each(testTiers())('SailfishApi ($type)', ({ type, tier }) => {
+  const api = new SailfishApi({ tier });
 
   it('should fetch latest block', async () => {
     const latestBlock = await api.fetchLatestBlock();
@@ -34,33 +34,41 @@ describe('SailfishApi', () => {
     console.log('Fetch trades:', trades_result);
   });
 
-  it('should return an error for invalid block range', async () => {
-    let tradesQuery: TradesQuery = {
+  it('should throw error for invalid block range', async () => {
+    async function fetchTradesWithRangeExpectError(range: Pick<TradesQuery, "lower_tick" | "upper_tick">) {
+      try {
+        await api.fetchTrades({
+          pool_types: [],
+          pool_addresses: [],
+          token_addresses: [],
+          to_wallets: [],
+          from_wallets: [],
+          ...range,
+        });
+        expect.fail("Expected to throw error");
+      } catch (err) {
+        if (!(err instanceof Error)) {
+          expect.fail(`Unexpected error (not instance of Error):`, err);
+        }
+        console.log('Error:', err?.message);
+      }
+
+    }
+
+    await fetchTradesWithRangeExpectError({
       lower_tick: 0,
       upper_tick: 1000000000,
-      pool_types: [],
-      pool_addresses: [],
-      token_addresses: [],
-      to_wallets: [],
-      from_wallets: [],
-    };
-    const trades = await api.fetchTrades(tradesQuery);
-    expect(trades).toBeInstanceOf(Error);
-    console.log('Error:', trades?.message);
+    });
 
-    tradesQuery.lower_tick = 1000000000;
-    tradesQuery.upper_tick = 999999999;
-    const trades2 = await api.fetchTrades(tradesQuery);
-    expect(trades2).toBeInstanceOf(Error);
-    console.log('Error:', trades2?.message);
+    await fetchTradesWithRangeExpectError({
+      lower_tick: 1000000000,
+      upper_tick: 999999999,
+    });
 
-
-    tradesQuery.lower_tick = -1;
-    tradesQuery.upper_tick = 1000000001;
-    const trades3 = await api.fetchTrades(tradesQuery);
-    expect(trades3).toBeInstanceOf(Error);
-    console.log('Error:', trades3?.message);
-
+    await fetchTradesWithRangeExpectError({
+      lower_tick: -1,
+      upper_tick: 1000000001,
+    });
   });
 
   it('should fetch pool info', async () => {

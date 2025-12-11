@@ -1,6 +1,6 @@
 {
   "name": "sailfish-sdk",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Sailfish SDK for JavaScript and TypeScript",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -32,6 +32,7 @@
     "@types/axios": "^0.14.4",
     "@types/node": "^24.8.1",
     "cmd-ts": "^0.14.3",
+    "dotenv": "^17.2.3",
     "ts-node": "^10.9.2",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3",

@@ -1,3 +1,5 @@
+import { Method } from 'axios';
+
 type SailfishCallbacks = {
     onMessage: (message: SailfishMessage) => void;
     onTokenInit: (message: TokenInit) => void;
@@ -282,14 +284,54 @@ type RawGraduations = {
     raydium_cpmm_graduations: IndexedRaydiumLaunchpadMigrateToCpswap[];
 };
 
+type SailfishTierFree = {
+    type: "free";
+};
+type SailfishTierBasic = {
+    type: "basic";
+    apiKey: string;
+};
+type SailfishTierLegacy = {
+    type: "legacy";
+    baseUrl?: string;
+};
+type AuthHeaders = Record<string, string>;
+type SailfishTier = SailfishTierFree | SailfishTierBasic | SailfishTierLegacy;
+declare const SailfishTier: {
+    is(value: unknown): value is SailfishTier;
+    free(): SailfishTierFree;
+    isFree(value: unknown): value is SailfishTierFree;
+    basic({ apiKey }: {
+        apiKey: string;
+    }): SailfishTierBasic;
+    isBasic(value: unknown): value is SailfishTierBasic;
+    legacy({ baseUrl }?: {
+        baseUrl?: string;
+    }): SailfishTierLegacy;
+    isLegacy(value: unknown): value is SailfishTierLegacy;
+    wsBaseUrl(tier: SailfishTier): {
+        baseUrl: string;
+        authHeaders: AuthHeaders;
+    };
+    httpBaseUrl(tier: SailfishTier): {
+        baseUrl: string;
+        authHeaders: AuthHeaders;
+    };
+};
+
 declare class SailfishApi {
-    private baseUrl;
-    constructor(baseUrl?: string);
-    fetchLatestBlock(): Promise<number | Error>;
-    fetchPoolInfo(address: string): Promise<PoolInfo | Error>;
-    fetchTokenInfo(address: string): Promise<TokenInfo | Error>;
-    fetchTrades(query: TradesQuery): Promise<Record<string, Trade[]> | Error>;
-    fetchRawGraduations(query: GraduatedPoolsQuery): Promise<RawGraduations | Error>;
+    private readonly tier;
+    private readonly baseUrl;
+    private readonly authHeaders;
+    constructor({ tier }: {
+        tier: SailfishTier;
+    });
+    fetchLatestBlock(): Promise<number>;
+    fetchPoolInfo(address: string): Promise<PoolInfo>;
+    fetchTokenInfo(address: string): Promise<TokenInfo>;
+    fetchTrades(query: TradesQuery): Promise<Record<string, Trade[]>>;
+    fetchRawGraduations(query: GraduatedPoolsQuery): Promise<RawGraduations>;
+    httpRequest<ReqData, ResData>(method: Method, path: string, data?: ReqData): Promise<ResData>;
 }
 
 declare const DEFAULT_QUOTE_TOKEN_ADDRESSES: string[];
@@ -300,15 +342,27 @@ declare function getQuoteAndBaseTokenInfos(token0Info: TokenInfo, token1Info: To
     quoteTokenInfo: TokenInfo;
     baseTokenInfo: TokenInfo;
 };
+type SailfishInit = {
+    filter: Filter;
+    callbacks: SailfishCallbacks;
+    tier: SailfishTier;
+} | {
+    filter: Filter;
+    callbacks: SailfishCallbacks;
+    apiKey: string;
+} | {
+    filter: Filter;
+    callbacks: SailfishCallbacks;
+};
 declare class Sailfish {
+    private tier;
     private filter;
-    private wsUrl;
-    private ws;
+    private callbacks;
     private api;
+    private ws;
     private poolInfos;
     private tokenInfos;
-    private callbacks;
-    constructor(callbacks: SailfishCallbacks, filter: Filter, apiUrl?: string, wsUrl?: string);
+    constructor({ filter, callbacks, ...init }: SailfishInit);
     isRunning(): boolean;
     swim(): void;
     rest(): void;
@@ -330,19 +384,26 @@ declare class Sailfish {
 }
 
 declare class SailfishWebsocket {
+    readonly botName: string;
+    enabled: boolean;
+    connecting: boolean;
+    connected: boolean;
+    private readonly tier;
+    private readonly baseUrl;
+    private readonly authHeaders;
+    private filter;
+    private callback;
     private socket;
     private reconnectAttempts;
     private reconnecting;
     private readonly maxReconnects;
     private readonly reconnectDelay;
-    readonly botName: string;
-    readonly ws_url: string;
-    enabled: boolean;
-    connecting: boolean;
-    connected: boolean;
-    private callback;
-    private filter;
-    constructor(ws_url: string, botName: string, filter: Filter, callback: (message: SailfishMessage) => void);
+    constructor({ tier, botName, filter, callback, }: {
+        tier: SailfishTier;
+        botName: string;
+        filter: Filter;
+        callback: (message: SailfishMessage) => void;
+    });
     updateFilter(newFilter: Filter): void;
     private _start;
     private onOpen;
@@ -354,7 +415,4 @@ declare class SailfishWebsocket {
     send(data: string | object): void;
 }
 
-declare const PRODUCTION_API_URL = "https://sailfish.0xfire.com";
-declare const PRODUCTION_WS_URL = "wss://sailfish.0xfire.com/stream/public/ws";
-
-export { BONDING_CURVE_POOL_TYPES, DEFAULT_QUOTE_TOKEN_ADDRESSES, type Filter, type GraduatedPoolsQuery, type IndexedPumpFunGraduatedPool, type IndexedRaydiumLaunchpadMigrateToAmm, type IndexedRaydiumLaunchpadMigrateToCpswap, type InstructionPosition, PRODUCTION_API_URL, PRODUCTION_WS_URL, type PoolInfo, type PoolInit, PoolType, type RawGraduations, Sailfish, SailfishApi, type SailfishCallbacks, SailfishEventResource, SailfishEventType, type SailfishMessage, SailfishWebsocket, type SolTxData, type TokenInfo, type TokenInit, type TokenMint, type Trade, type TradeIndex, type TradeRaw, type TradesQuery, amountToFloatString, getQuoteAndBaseTokenInfos, getTradeData };
+export { type AuthHeaders, BONDING_CURVE_POOL_TYPES, DEFAULT_QUOTE_TOKEN_ADDRESSES, type Filter, type GraduatedPoolsQuery, type IndexedPumpFunGraduatedPool, type IndexedRaydiumLaunchpadMigrateToAmm, type IndexedRaydiumLaunchpadMigrateToCpswap, type InstructionPosition, type PoolInfo, type PoolInit, PoolType, type RawGraduations, Sailfish, SailfishApi, type SailfishCallbacks, SailfishEventResource, SailfishEventType, type SailfishMessage, SailfishTier, type SailfishTierBasic, type SailfishTierFree, type SailfishTierLegacy, SailfishWebsocket, type SolTxData, type TokenInfo, type TokenInit, type TokenMint, type Trade, type TradeIndex, type TradeRaw, type TradesQuery, amountToFloatString, getQuoteAndBaseTokenInfos, getTradeData };

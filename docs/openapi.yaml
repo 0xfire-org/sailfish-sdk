@@ -1,0 +1,734 @@
+openapi: 3.1.0
+info:
+  title: Sailfish API
+  version: 1.0.0
+
+servers:
+  - url: https://free.sailfish.solanavibestation.com
+    description: Free tier
+  - url: https://basic.sailfish.solanavibestation.com
+    description: Basic tier (requires Authorization header)
+
+paths:
+  /tick:
+    get:
+      summary: Get latest block tick
+      operationId: getLatestBlock
+      responses:
+        "200":
+          description: Latest block/tick number
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int64
+
+  /sailfish/pools/query:
+    post:
+      summary: Query pool information by address
+      operationId: fetchPoolInfo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              description: Pool address (e.g. Solana AMM pool address)
+      responses:
+        "200":
+          description: Pool information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PoolInfo"
+
+  /sailfish/tokens/query:
+    post:
+      summary: Query token information by address
+      operationId: fetchTokenInfo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              description: Token mint address
+      responses:
+        "200":
+          description: Token information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenInfo"
+
+  /sailfish/trades/query:
+    post:
+      summary: Query normalized trades
+      operationId: fetchTrades
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TradesQuery"
+      responses:
+        "200":
+          description: Map of trades grouped by backend-defined key (e.g. pool address or tick)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Trade"
+
+  /sailfish/graduated_pools_raw/query:
+    post:
+      summary: Query raw “graduated” pools
+      operationId: fetchRawGraduations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GraduatedPoolsQuery"
+      responses:
+        "200":
+          description: Raw pool graduation data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RawGraduations"
+
+  /public/ws:
+    get:
+      summary: Sailfish WebSocket event stream
+      description: >
+        Upgrades to a WebSocket that streams Sailfish events.
+        After connection, the client must send an `updateFilter` message with a `Filter` payload
+        to start receiving events.
+      operationId: connectPublicWebsocket
+      parameters:
+        - in: header
+          name: Authorization
+          description: API key for basic tier. Omit for free tier.
+          required: false
+          schema:
+            type: string
+      responses:
+        "101":
+          description: WebSocket upgrade
+        "400":
+          description: Invalid request
+        "401":
+          description: Unauthorized
+      x-websocket:
+        subprotocol: json
+        messages:
+          - direction: send
+            name: UpdateFilter
+            summary: Set or update the stream filter
+            payload:
+              $ref: "#/components/schemas/UpdateFilterMessage"
+          - direction: receive
+            name: SailfishEvent
+            summary: Event stream message
+            payload:
+              $ref: "#/components/schemas/SailfishMessage"
+
+components:
+  schemas:
+
+    # --------- Core enums and primitives ---------
+    SailfishEventType:
+      type: string
+      enum: [event, signal]
+
+    SailfishEventResource:
+      type: string
+      enum:
+        - token-inits
+        - token-mints
+        - token-graduates
+        - pool-inits
+        - pool-graduates
+        - trades-raw
+
+    PoolType:
+      type: string
+      enum:
+        - RaydiumAmm
+        - RaydiumCpmm
+        - RaydiumClmm
+        - RaydiumLaunchpad
+        - PumpSwapAmm
+        - PumpFunAmm
+        - MeteoraDyn
+        - MeteoraDynV2
+
+    Filter:
+      type: object
+      properties:
+        token_addresses:
+          type: array
+          items:
+            type: string
+          description: Limit events to these token mints
+        pool_addresses:
+          type: array
+          items:
+            type: string
+          description: Limit events to these pool addresses
+        dex_types:
+          type: array
+          items:
+            type: string
+          description: DEX/pool types to include
+      required: [token_addresses, pool_addresses, dex_types]
+
+    # --------- Common indexing types ---------
+
+    InstructionPosition:
+      type: object
+      properties:
+        parent_index:
+          type: integer
+        child_index:
+          type: integer
+          nullable: true
+      required: [parent_index, child_index]
+
+    TradeIndex:
+      type: object
+      properties:
+        tick:
+          type: integer
+          description: Typically block/slot number
+        index_a:
+          type: integer
+          description: Index within the tick
+        index_b:
+          type: integer
+          description: Index within the transaction
+        tx_hash:
+          type: string
+      required: [tick, index_a, index_b, tx_hash]
+
+    SolTxData:
+      type: object
+      properties:
+        slot:
+          type: integer
+        version:
+          type: string
+        first_signer:
+          type: string
+        first_signature:
+          type: string
+        all_signers:
+          type: array
+          items:
+            type: string
+        all_signatures:
+          type: array
+          items:
+            type: string
+        fee:
+          type: number
+        bribe:
+          type: number
+        priority_fee:
+          type: number
+          nullable: true
+        index_in_slot:
+          type: integer
+          nullable: true
+      required:
+        - slot
+        - version
+        - first_signer
+        - first_signature
+        - all_signers
+        - all_signatures
+        - fee
+        - bribe
+
+    # --------- Token and pool types ---------
+
+    TokenInfo:
+      type: object
+      properties:
+        address:
+          type: string
+        name:
+          type: string
+        symbol:
+          type: string
+        decimals:
+          type: integer
+        total_supply:
+          type: string
+      required: [address, name, symbol, decimals, total_supply]
+
+    PoolInfo:
+      type: object
+      properties:
+        pool_type:
+          $ref: "#/components/schemas/PoolType"
+        address:
+          type: string
+        quote_token:
+          $ref: "#/components/schemas/TokenInfo"
+        base_token:
+          $ref: "#/components/schemas/TokenInfo"
+        buy_path:
+          type: array
+          items:
+            type: string
+        sell_path:
+          type: array
+          items:
+            type: string
+        token_0:
+          type: string
+        token_1:
+          type: string
+      required:
+        - pool_type
+        - address
+        - quote_token
+        - base_token
+        - buy_path
+        - sell_path
+        - token_0
+        - token_1
+
+    PoolInit:
+      type: object
+      properties:
+        tx:
+          $ref: "#/components/schemas/SolTxData"
+        pool_type:
+          $ref: "#/components/schemas/PoolType"
+        pool_address:
+          type: string
+        token_0_mint:
+          type: string
+        token_1_mint:
+          type: string
+      required:
+        - tx
+        - pool_type
+        - pool_address
+        - token_0_mint
+        - token_1_mint
+
+    TokenInit:
+      type: object
+      properties:
+        tx:
+          $ref: "#/components/schemas/SolTxData"
+        instruction_position:
+          $ref: "#/components/schemas/InstructionPosition"
+        program_id:
+          type: string
+        decimals:
+          type: integer
+        mint:
+          type: string
+        mint_authority:
+          type: string
+          nullable: true
+      required:
+        - tx
+        - instruction_position
+        - program_id
+        - decimals
+        - mint
+
+    TokenMint:
+      type: object
+      properties:
+        tx:
+          $ref: "#/components/schemas/SolTxData"
+        instruction_position:
+          $ref: "#/components/schemas/InstructionPosition"
+        program_id:
+          type: string
+        account:
+          type: string
+        amount:
+          type: string
+        mint:
+          type: string
+        mint_authority:
+          type: string
+          nullable: true
+      required:
+        - tx
+        - instruction_position
+        - program_id
+        - account
+        - amount
+        - mint
+
+    # --------- Trades ---------
+
+    TradeRaw:
+      type: object
+      description: Low-level trade data as emitted by the stream
+      properties:
+        index:
+          $ref: "#/components/schemas/TradeIndex"
+        pool_type:
+          type: string
+        pool_address:
+          type: string
+        token_address_in:
+          type: string
+        token_amount_in:
+          type: string
+        token_address_out:
+          type: string
+        token_amount_out:
+          type: string
+        price:
+          type: string
+        fee:
+          type: string
+        bribe:
+          type: string
+        to_wallet:
+          type: string
+        from_wallet:
+          type: string
+        from_account:
+          type: string
+        to_account:
+          type: string
+      required:
+        - index
+        - pool_type
+        - pool_address
+        - token_address_in
+        - token_amount_in
+        - token_address_out
+        - token_amount_out
+        - price
+        - fee
+        - bribe
+        - to_wallet
+        - from_wallet
+        - from_account
+        - to_account
+
+    Trade:
+      type: object
+      description: Normalized trade with base/quote semantics
+      properties:
+        index:
+          $ref: "#/components/schemas/TradeIndex"
+        pool_address:
+          type: string
+        quote_token_address:
+          type: string
+        base_token_address:
+          type: string
+        quote_amount:
+          type: string
+          description: Signed change in quote token balance
+        base_amount:
+          type: string
+          description: Signed change in base token balance
+        price:
+          type: string
+          description: base_token / quote_token
+        fee:
+          type: string
+        bribe:
+          type: string
+        from_wallet:
+          type: string
+        to_wallet:
+          type: string
+        from_wallet_account:
+          type: string
+          nullable: true
+        to_wallet_account:
+          type: string
+          nullable: true
+      required:
+        - index
+        - pool_address
+        - quote_token_address
+        - base_token_address
+        - quote_amount
+        - base_amount
+        - price
+        - fee
+        - bribe
+        - from_wallet
+        - to_wallet
+
+    TradesQuery:
+      type: object
+      properties:
+        lower_tick:
+          type: integer
+        upper_tick:
+          type: integer
+        pool_types:
+          type: array
+          items:
+            $ref: "#/components/schemas/PoolType"
+        pool_addresses:
+          type: array
+          items:
+            type: string
+        token_addresses:
+          type: array
+          items:
+            type: string
+        to_wallets:
+          type: array
+          items:
+            type: string
+        from_wallets:
+          type: array
+          items:
+            type: string
+      required:
+        - lower_tick
+        - upper_tick
+        - pool_types
+        - pool_addresses
+        - token_addresses
+        - to_wallets
+        - from_wallets
+
+    # --------- Graduations ---------
+
+    IndexedPumpFunGraduatedPool:
+      type: object
+      properties:
+        created_at:
+          type: string
+          format: date-time
+        slot:
+          type: integer
+        version:
+          type: string
+        first_signer:
+          type: string
+        first_signature:
+          type: string
+        all_signers:
+          type: array
+          items:
+            type: string
+        all_signatures:
+          type: array
+          items:
+            type: string
+        fee:
+          type: number
+        priority_fee:
+          type: number
+        index_in_slot:
+          type: integer
+        bribe:
+          type: number
+        global:
+          type: string
+        withdraw_authority:
+          type: string
+        # plus other fields in the actual struct, if needed
+      required:
+        - created_at
+        - slot
+        - version
+        - first_signer
+        - first_signature
+        - all_signers
+        - all_signatures
+        - fee
+        - priority_fee
+        - index_in_slot
+        - bribe
+        - global
+        - withdraw_authority
+
+    IndexedRaydiumLaunchpadMigrateToAmm:
+      type: object
+      description: Raydium launchpad → AMM graduation (simplified)
+      properties: {}
+      additionalProperties: true
+
+    IndexedRaydiumLaunchpadMigrateToCpswap:
+      type: object
+      description: Raydium launchpad → CPMM graduation (simplified)
+      properties: {}
+      additionalProperties: true
+
+    GraduatedPoolsQuery:
+      type: object
+      properties:
+        lower_tick:
+          type: integer
+        upper_tick:
+          type: integer
+        pool_types:
+          type: array
+          items:
+            $ref: "#/components/schemas/PoolType"
+        pool_addresses:
+          type: array
+          items:
+            type: string
+        token_addresses:
+          type: array
+          items:
+            type: string
+        # creator_addresses intentionally omitted (commented out in TS)
+      required:
+        - lower_tick
+        - upper_tick
+        - pool_types
+        - pool_addresses
+        - token_addresses
+
+    RawGraduations:
+      type: object
+      properties:
+        pumpswap_graduations:
+          type: array
+          items:
+            $ref: "#/components/schemas/IndexedPumpFunGraduatedPool"
+        raydium_amm_graduations:
+          type: array
+          items:
+            $ref: "#/components/schemas/IndexedRaydiumLaunchpadMigrateToAmm"
+        raydium_cpmm_graduations:
+          type: array
+          items:
+            $ref: "#/components/schemas/IndexedRaydiumLaunchpadMigrateToCpswap"
+      required:
+        - pumpswap_graduations
+        - raydium_amm_graduations
+        - raydium_cpmm_graduations
+
+    # --------- WebSocket message schemas ---------
+
+    UpdateFilterMessage:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [updateFilter]
+        filter:
+          $ref: "#/components/schemas/Filter"
+      required: [type, filter]
+
+    SailfishMessage:
+      description: Generic envelope for all WebSocket events
+      oneOf:
+        - $ref: "#/components/schemas/SailfishMessageTokenInits"
+        - $ref: "#/components/schemas/SailfishMessageTokenMints"
+        - $ref: "#/components/schemas/SailfishMessageTokenGraduates"
+        - $ref: "#/components/schemas/SailfishMessagePoolInits"
+        - $ref: "#/components/schemas/SailfishMessagePoolGraduates"
+        - $ref: "#/components/schemas/SailfishMessageTradesRaw"
+
+    SailfishMessageBase:
+      type: object
+      properties:
+        type:
+          $ref: "#/components/schemas/SailfishEventType"
+        resource:
+          $ref: "#/components/schemas/SailfishEventResource"
+      required: [type, resource]
+
+    SailfishMessageTokenInits:
+      allOf:
+        - $ref: "#/components/schemas/SailfishMessageBase"
+        - type: object
+          properties:
+            resource:
+              type: string
+              const: token-inits
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/TokenInit"
+          required: [data]
+
+    SailfishMessageTokenMints:
+      allOf:
+        - $ref: "#/components/schemas/SailfishMessageBase"
+        - type: object
+          properties:
+            resource:
+              type: string
+              const: token-mints
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/TokenMint"
+          required: [data]
+
+    SailfishMessageTokenGraduates:
+      allOf:
+        - $ref: "#/components/schemas/SailfishMessageBase"
+        - type: object
+          properties:
+            resource:
+              type: string
+              const: token-graduates
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/PoolInit"
+          required: [data]
+
+    SailfishMessagePoolInits:
+      allOf:
+        - $ref: "#/components/schemas/SailfishMessageBase"
+        - type: object
+          properties:
+            resource:
+              type: string
+              const: pool-inits
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/PoolInit"
+          required: [data]
+
+    SailfishMessagePoolGraduates:
+      allOf:
+        - $ref: "#/components/schemas/SailfishMessageBase"
+        - type: object
+          properties:
+            resource:
+              type: string
+              const: pool-graduates
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/PoolInit"
+          required: [data]
+
+    SailfishMessageTradesRaw:
+      allOf:
+        - $ref: "#/components/schemas/SailfishMessageBase"
+        - type: object
+          properties:
+            resource:
+              type: string
+              const: trades-raw
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/TradeRaw"
+          required: [data]

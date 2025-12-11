@@ -1,7 +1,9 @@
 # Sailfish SDK
 
-Sailfish SDK is a JavaScript/TypeScript SDK for interacting with the Sailfish API and WebSocket endpoints.  
-It allows you to fetch pool and token information, subscribe to updates, and listen to trades in real-time.
+Sailfish SDK is a JavaScript/TypeScript SDK for interacting with the Sailfish
+API and WebSocket endpoints.\
+It allows you to fetch pool and token information, subscribe to updates, and
+listen to trades in real-time.
 
 ---
 
@@ -28,38 +30,34 @@ npm link
 cd ../your-project
 npm link sailfish-sdk
 ```
+
 ---
 
 ### Example
 
 ```ts
-import { Sailfish } from "sailfish-sdk";
+import { Sailfish, SailfishTier } from "sailfish-sdk";
 import { DEFAULT_QUOTE_TOKEN_ADDRESSES } from "sailfish-sdk";
 
-// Example callbacks
-const callbacks = {
-  onMessage: (msg) => console.log("Message:", msg),
-  onTokenInit: (token) => console.log("Token Init:", token),
-  onTokenMint: (mint) => console.log("Token Mint:", mint),
-  onTokenGraduate: (poolInit) => console.log("Token Graduate:", poolInit),
-  onPoolInit: (poolInit) => console.log("Pool Init:", poolInit),
-  onTradeRaw: (tradeRaw) => console.log("Trade Raw:", tradeRaw),
-  onTrade: (trade) => console.log("Trade:", trade),
-};
-
-const filter = {
-  token_addresses: DEFAULT_QUOTE_TOKEN_ADDRESSES,
-  pool_addresses: [],
-  dex_types: [],
-};
-
-// ✅ UPDATED: Constructor now takes (callbacks, filter, apiUrl, wsUrl)
-const sailfish = new Sailfish(
-  callbacks,
-  filter,
-  "http://sailfish.0xfire.com", // apiUrl
-  "ws://sailfish.0xfire.com"    // wsUrl
-);
+const sailfish = new Sailfish({
+  tier: SailfishTier.free({ // <-- Switch between Free and Basic, based on your tier
+    apiKey: "...", // <-- Replace with your API_KEY
+  }),
+  filter: {
+    token_addresses: DEFAULT_QUOTE_TOKEN_ADDRESSES,
+    pool_addresses: [],
+    dex_types: [],
+  },
+  callbacks: {
+    onMessage: (msg) => console.log("Message:", msg),
+    onTokenInit: (token) => console.log("Token Init:", token),
+    onTokenMint: (mint) => console.log("Token Mint:", mint),
+    onTokenGraduate: (poolInit) => console.log("Token Graduate:", poolInit),
+    onPoolInit: (poolInit) => console.log("Pool Init:", poolInit),
+    onTradeRaw: (tradeRaw) => console.log("Trade Raw:", tradeRaw),
+    onTrade: (trade) => console.log("Trade:", trade),
+  },
+});
 
 async function example() {
   // Fetch pool info
@@ -78,7 +76,6 @@ async function example() {
     console.log("Token info:", token);
   }
 }
-
 
 example();
 ```
