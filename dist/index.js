@@ -69,6 +69,7 @@ var PoolType = /* @__PURE__ */ ((PoolType2) => {
   PoolType2["PumpFunAmm"] = "PumpFunAmm";
   PoolType2["MeteoraDyn"] = "MeteoraDyn";
   PoolType2["MeteoraDynV2"] = "MeteoraDynV2";
+  PoolType2["MeteoraDlmm"] = "MeteoraDlmm";
   return PoolType2;
 })(PoolType || {});
 
@@ -78,25 +79,19 @@ var import_axios = __toESM(require("axios"));
 // src/tier.ts
 var SailfishTier = {
   is(value) {
-    return SailfishTier.isFree(value) || SailfishTier.isBasic(value) || SailfishTier.isLegacy(value);
+    return SailfishTier.isFree(value) || SailfishTier.isBasic(value);
   },
-  free() {
-    return { type: "free" };
-  },
-  isFree(value) {
-    return _hasType(value) && value.type === "free";
+  free({ apiKey }) {
+    return { type: "free", apiKey };
   },
   basic({ apiKey }) {
     return { type: "basic", apiKey };
   },
+  isFree(value) {
+    return _hasType(value) && value.type === "free" && _hasApiKey(value);
+  },
   isBasic(value) {
     return _hasType(value) && value.type === "basic" && _hasApiKey(value);
-  },
-  legacy({ baseUrl } = {}) {
-    return { type: "legacy", baseUrl };
-  },
-  isLegacy(value) {
-    return _hasType(value) && value.type === "legacy" && _hasPropStringOrUndefined(value, "baseUrl");
   },
   wsBaseUrl(tier) {
     let { baseUrl, authHeaders } = SailfishTier.httpBaseUrl(tier);
@@ -104,23 +99,16 @@ var SailfishTier = {
     return { baseUrl, authHeaders };
   },
   httpBaseUrl(tier) {
-    var _a;
     if (SailfishTier.isFree(tier)) {
       return {
         baseUrl: "https://free.sailfish.solanavibestation.com",
-        authHeaders: {}
+        authHeaders: { "Authorization": tier.apiKey }
       };
     }
     if (SailfishTier.isBasic(tier)) {
       return {
         baseUrl: "https://basic.sailfish.solanavibestation.com",
         authHeaders: { "Authorization": tier.apiKey }
-      };
-    }
-    if (SailfishTier.isLegacy(tier)) {
-      return {
-        baseUrl: (_a = tier.baseUrl) != null ? _a : "https://sailfish.0xfire.com",
-        authHeaders: {}
       };
     }
     const _exhaustiveCheck = tier;
@@ -230,13 +218,7 @@ var SailfishWebsocket = class {
     this.reconnectAttempts++;
     this.connecting = true;
     console.log(`Connecting to ${this.baseUrl} for ${this.botName}, attempt ${this.reconnectAttempts}`);
-    const path = (() => {
-      if (SailfishTier.isLegacy(this.tier)) {
-        return "/stream/public/ws";
-      } else {
-        return "/public/ws";
-      }
-    })();
+    const path = "/public/ws";
     this.socket = new import_isomorphic_ws.default(this.baseUrl + path, {
       headers: {
         ...this.authHeaders
@@ -357,20 +339,10 @@ function getQuoteAndBaseTokenInfos(token0Info, token1Info, supportedQuoteTokens 
 }
 var Sailfish = class {
   constructor({
+    tier,
     filter,
-    callbacks,
-    ...init
+    callbacks
   }) {
-    const tier = (() => {
-      if ("tier" in init && SailfishTier.is(init.tier)) {
-        return init.tier;
-      }
-      if ("apiKey" in init && typeof init.apiKey === "string") {
-        const { apiKey } = init;
-        return SailfishTier.basic({ apiKey });
-      }
-      return SailfishTier.legacy();
-    })();
     this.tier = tier;
     this.filter = filter;
     this.callbacks = callbacks;

@@ -31,6 +31,7 @@ export enum PoolType {
   PumpFunAmm = "PumpFunAmm",
   MeteoraDyn = "MeteoraDyn",
   MeteoraDynV2 = "MeteoraDynV2",
+  MeteoraDlmm = "MeteoraDlmm",
 }
 
 export type SailfishMessage = {

@@ -166,6 +166,7 @@ components:
         - PumpFunAmm
         - MeteoraDyn
         - MeteoraDynV2
+        - MeteoraDlmm
 
     Filter:
       type: object

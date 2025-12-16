@@ -29,7 +29,8 @@ declare enum PoolType {
     PumpSwapAmm = "PumpSwapAmm",
     PumpFunAmm = "PumpFunAmm",
     MeteoraDyn = "MeteoraDyn",
-    MeteoraDynV2 = "MeteoraDynV2"
+    MeteoraDynV2 = "MeteoraDynV2",
+    MeteoraDlmm = "MeteoraDlmm"
 }
 type SailfishMessage = {
     type: SailfishEventType;
@@ -286,29 +287,25 @@ type RawGraduations = {
 
 type SailfishTierFree = {
     type: "free";
+    apiKey: string;
 };
 type SailfishTierBasic = {
     type: "basic";
     apiKey: string;
 };
-type SailfishTierLegacy = {
-    type: "legacy";
-    baseUrl?: string;
-};
+type SailfishTierType = SailfishTier['type'];
 type AuthHeaders = Record<string, string>;
-type SailfishTier = SailfishTierFree | SailfishTierBasic | SailfishTierLegacy;
+type SailfishTier = SailfishTierFree | SailfishTierBasic;
 declare const SailfishTier: {
     is(value: unknown): value is SailfishTier;
-    free(): SailfishTierFree;
-    isFree(value: unknown): value is SailfishTierFree;
+    free({ apiKey }: {
+        apiKey: string;
+    }): SailfishTierFree;
     basic({ apiKey }: {
         apiKey: string;
     }): SailfishTierBasic;
+    isFree(value: unknown): value is SailfishTierFree;
     isBasic(value: unknown): value is SailfishTierBasic;
-    legacy({ baseUrl }?: {
-        baseUrl?: string;
-    }): SailfishTierLegacy;
-    isLegacy(value: unknown): value is SailfishTierLegacy;
     wsBaseUrl(tier: SailfishTier): {
         baseUrl: string;
         authHeaders: AuthHeaders;
@@ -346,13 +343,6 @@ type SailfishInit = {
     filter: Filter;
     callbacks: SailfishCallbacks;
     tier: SailfishTier;
-} | {
-    filter: Filter;
-    callbacks: SailfishCallbacks;
-    apiKey: string;
-} | {
-    filter: Filter;
-    callbacks: SailfishCallbacks;
 };
 declare class Sailfish {
     private tier;
@@ -362,7 +352,7 @@ declare class Sailfish {
     private ws;
     private poolInfos;
     private tokenInfos;
-    constructor({ filter, callbacks, ...init }: SailfishInit);
+    constructor({ tier, filter, callbacks, }: SailfishInit);
     isRunning(): boolean;
     swim(): void;
     rest(): void;
@@ -415,4 +405,4 @@ declare class SailfishWebsocket {
     send(data: string | object): void;
 }
 
-export { type AuthHeaders, BONDING_CURVE_POOL_TYPES, DEFAULT_QUOTE_TOKEN_ADDRESSES, type Filter, type GraduatedPoolsQuery, type IndexedPumpFunGraduatedPool, type IndexedRaydiumLaunchpadMigrateToAmm, type IndexedRaydiumLaunchpadMigrateToCpswap, type InstructionPosition, type PoolInfo, type PoolInit, PoolType, type RawGraduations, Sailfish, SailfishApi, type SailfishCallbacks, SailfishEventResource, SailfishEventType, type SailfishMessage, SailfishTier, type SailfishTierBasic, type SailfishTierFree, type SailfishTierLegacy, SailfishWebsocket, type SolTxData, type TokenInfo, type TokenInit, type TokenMint, type Trade, type TradeIndex, type TradeRaw, type TradesQuery, amountToFloatString, getQuoteAndBaseTokenInfos, getTradeData };
+export { type AuthHeaders, BONDING_CURVE_POOL_TYPES, DEFAULT_QUOTE_TOKEN_ADDRESSES, type Filter, type GraduatedPoolsQuery, type IndexedPumpFunGraduatedPool, type IndexedRaydiumLaunchpadMigrateToAmm, type IndexedRaydiumLaunchpadMigrateToCpswap, type InstructionPosition, type PoolInfo, type PoolInit, PoolType, type RawGraduations, Sailfish, SailfishApi, type SailfishCallbacks, SailfishEventResource, SailfishEventType, type SailfishMessage, SailfishTier, type SailfishTierBasic, type SailfishTierFree, type SailfishTierType, SailfishWebsocket, type SolTxData, type TokenInfo, type TokenInit, type TokenMint, type Trade, type TradeIndex, type TradeRaw, type TradesQuery, amountToFloatString, getQuoteAndBaseTokenInfos, getTradeData };
