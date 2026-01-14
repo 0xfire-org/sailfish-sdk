@@ -1,9 +1,11 @@
 export type SailfishTierFree = { type: "free", apiKey: string };
 export type SailfishTierBasic = { type: "basic", apiKey: string };
+export type PolymarketTier = { type: "polymarket", apiKey: string };
 
 export type SailfishTier =
   | SailfishTierFree
   | SailfishTierBasic
+  | PolymarketTier
   ;
 
 export type SailfishTierType = SailfishTier['type'];
@@ -29,6 +31,9 @@ export const SailfishTier = {
   isBasic(value: unknown): value is SailfishTierBasic {
     return _hasType(value) && value.type === "basic" && _hasApiKey(value);
   },
+  isPolymarket(value: unknown): value is PolymarketTier {
+    return _hasType(value) && value.type === "polymarket" && _hasApiKey(value);
+  },
   wsBaseUrl(tier: SailfishTier): { baseUrl: string, authHeaders: AuthHeaders } {
     let { baseUrl, authHeaders } = SailfishTier.httpBaseUrl(tier);
 
@@ -49,6 +54,13 @@ export const SailfishTier = {
     if (SailfishTier.isBasic(tier)) {
       return {
         baseUrl: "https://basic.sailfish.solanavibestation.com",
+        authHeaders: { "Authorization": tier.apiKey },
+      };
+    }
+
+    if (SailfishTier.isPolymarket(tier)) {
+      return {
+        baseUrl: "https://polymarket-sailfish.0xfire.com",
         authHeaders: { "Authorization": tier.apiKey },
       };
     }

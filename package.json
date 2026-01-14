@@ -1,6 +1,6 @@
 {
   "name": "sailfish-sdk",
-  "version": "1.2.1",
+  "version": "1.2.3",
   "description": "Sailfish SDK for JavaScript and TypeScript",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -18,7 +18,8 @@
     "build": "tsup --cjsInterop",
     "prepare": "npm run build",
     "clean": "rm -rf dist",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:polymarket": "tsx test-polymarket-ws.ts"
   },
   "keywords": [
     "sailfish",
@@ -35,6 +36,7 @@
     "dotenv": "^17.2.3",
     "ts-node": "^10.9.2",
     "tsup": "^8.5.0",
+    "tsx": "^4.19.2",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   },

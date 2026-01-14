@@ -1,3 +1,5 @@
+import { PolymarketSailfishEventResource } from "./polymarket/types";
+
 export type SailfishCallbacks = {
   onMessage: (message: SailfishMessage) => void;
   onTokenInit: (message: TokenInit) => void;
@@ -36,7 +38,7 @@ export enum PoolType {
 
 export type SailfishMessage = {
   type: SailfishEventType,
-  resource: SailfishEventResource,
+  resource: SailfishEventResource | PolymarketSailfishEventResource,
   data: any,
 }
 

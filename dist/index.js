@@ -93,6 +93,9 @@ var SailfishTier = {
   isBasic(value) {
     return _hasType(value) && value.type === "basic" && _hasApiKey(value);
   },
+  isPolymarket(value) {
+    return _hasType(value) && value.type === "polymarket" && _hasApiKey(value);
+  },
   wsBaseUrl(tier) {
     let { baseUrl, authHeaders } = SailfishTier.httpBaseUrl(tier);
     baseUrl = baseUrl.replace("https://", "wss://").replace("http://", "ws://");
@@ -108,6 +111,12 @@ var SailfishTier = {
     if (SailfishTier.isBasic(tier)) {
       return {
         baseUrl: "https://basic.sailfish.solanavibestation.com",
+        authHeaders: { "Authorization": tier.apiKey }
+      };
+    }
+    if (SailfishTier.isPolymarket(tier)) {
+      return {
+        baseUrl: "https://polymarket-sailfish.0xfire.com",
         authHeaders: { "Authorization": tier.apiKey }
       };
     }
