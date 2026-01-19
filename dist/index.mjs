@@ -34,11 +34,17 @@ var SailfishTier = {
   is(value) {
     return SailfishTier.isFree(value) || SailfishTier.isBasic(value);
   },
+  demo({ apiKey }) {
+    return { type: "demo", apiKey: "demo" };
+  },
   free({ apiKey }) {
     return { type: "free", apiKey };
   },
   basic({ apiKey }) {
     return { type: "basic", apiKey };
+  },
+  isDemo(value) {
+    return _hasType(value) && value.type === "demo" && _hasApiKey(value);
   },
   isFree(value) {
     return _hasType(value) && value.type === "free" && _hasApiKey(value);
@@ -51,10 +57,19 @@ var SailfishTier = {
   },
   wsBaseUrl(tier) {
     let { baseUrl, authHeaders } = SailfishTier.httpBaseUrl(tier);
+    if (SailfishTier.isDemo(tier)) {
+      baseUrl = "wss://sailfish.0xfire.com/stream/public/ws";
+    }
     baseUrl = baseUrl.replace("https://", "wss://").replace("http://", "ws://");
     return { baseUrl, authHeaders };
   },
   httpBaseUrl(tier) {
+    if (SailfishTier.isDemo(tier)) {
+      return {
+        baseUrl: "https://sailfish.0xfire.com",
+        authHeaders: { "Authorization": tier.apiKey }
+      };
+    }
     if (SailfishTier.isFree(tier)) {
       return {
         baseUrl: "https://free.sailfish.solanavibestation.com",
