@@ -517,7 +517,7 @@ var Sailfish = class {
 
 // src/polymarket/types.ts
 var PolymarketSailfishEventResource = /* @__PURE__ */ ((PolymarketSailfishEventResource2) => {
-  PolymarketSailfishEventResource2["MarketOrdebooks"] = "market-ordebooks";
+  PolymarketSailfishEventResource2["MarketOrdebooks"] = "market-orderbooks";
   return PolymarketSailfishEventResource2;
 })(PolymarketSailfishEventResource || {});
 
@@ -559,7 +559,7 @@ var PolymarketSailfish = class {
   }
   onMessage(message) {
     switch (message.resource) {
-      case "market-ordebooks" /* MarketOrdebooks */: {
+      case "market-orderbooks" /* MarketOrdebooks */: {
         const data = message.data;
         this.orderbooks[data.market_slug] = data;
         if (this.markets[data.market_slug] === void 0) {

@@ -1,7 +1,7 @@
 import { Method } from 'axios';
 
 declare enum PolymarketSailfishEventResource {
-    MarketOrdebooks = "market-ordebooks"
+    MarketOrdebooks = "market-orderbooks"
 }
 interface BookSide {
     levels: Record<string, string>;
