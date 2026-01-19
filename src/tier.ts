@@ -1,8 +1,10 @@
+export type SailfishTierDemo = { type: "demo", apiKey: string };
 export type SailfishTierFree = { type: "free", apiKey: string };
 export type SailfishTierBasic = { type: "basic", apiKey: string };
 export type PolymarketTier = { type: "polymarket", apiKey: string };
 
 export type SailfishTier =
+  | SailfishTierDemo
   | SailfishTierFree
   | SailfishTierBasic
   | PolymarketTier
@@ -19,11 +21,18 @@ export const SailfishTier = {
       || SailfishTier.isBasic(value)
       ;
   },
+
+  demo({ apiKey }: { apiKey: string }): SailfishTierDemo {
+    return { type: "demo", apiKey: "demo" };
+  },
   free({ apiKey }: { apiKey: string }): SailfishTierFree {
     return { type: "free", apiKey };
   },
   basic({ apiKey }: { apiKey: string }): SailfishTierBasic {
     return { type: "basic", apiKey };
+  },
+  isDemo(value: unknown): value is SailfishTierDemo {
+    return _hasType(value) && value.type === "demo" && _hasApiKey(value);
   },
   isFree(value: unknown): value is SailfishTierFree {
     return _hasType(value) && value.type === "free" && _hasApiKey(value);
@@ -36,6 +45,9 @@ export const SailfishTier = {
   },
   wsBaseUrl(tier: SailfishTier): { baseUrl: string, authHeaders: AuthHeaders } {
     let { baseUrl, authHeaders } = SailfishTier.httpBaseUrl(tier);
+    if (SailfishTier.isDemo(tier)) {
+      baseUrl = "wss://sailfish.0xfire.com/stream/public/ws";
+    }
 
     baseUrl = baseUrl
       .replace("https://", "wss://")
@@ -44,6 +56,13 @@ export const SailfishTier = {
     return { baseUrl, authHeaders };
   },
   httpBaseUrl(tier: SailfishTier): { baseUrl: string, authHeaders: AuthHeaders } {
+    if (SailfishTier.isDemo(tier)) {
+      return {
+        baseUrl: "https://sailfish.0xfire.com",
+        authHeaders: { "Authorization": tier.apiKey },
+      };
+    }
+
     if (SailfishTier.isFree(tier)) {
       return {
         baseUrl: "https://free.sailfish.solanavibestation.com",
