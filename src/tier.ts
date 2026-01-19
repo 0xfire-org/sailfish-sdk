@@ -46,7 +46,7 @@ export const SailfishTier = {
   wsBaseUrl(tier: SailfishTier): { baseUrl: string, authHeaders: AuthHeaders } {
     let { baseUrl, authHeaders } = SailfishTier.httpBaseUrl(tier);
     if (SailfishTier.isDemo(tier)) {
-      baseUrl = "wss://sailfish.0xfire.com/stream/public/ws";
+      baseUrl = "wss://sailfish.0xfire.com/stream";
     }
 
     baseUrl = baseUrl

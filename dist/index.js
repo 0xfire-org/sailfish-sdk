@@ -107,7 +107,7 @@ var SailfishTier = {
   wsBaseUrl(tier) {
     let { baseUrl, authHeaders } = SailfishTier.httpBaseUrl(tier);
     if (SailfishTier.isDemo(tier)) {
-      baseUrl = "wss://sailfish.0xfire.com/stream/public/ws";
+      baseUrl = "wss://sailfish.0xfire.com/stream";
     }
     baseUrl = baseUrl.replace("https://", "wss://").replace("http://", "ws://");
     return { baseUrl, authHeaders };
@@ -245,11 +245,16 @@ var SailfishWebsocket = class {
     this.connecting = true;
     console.log(`Connecting to ${this.baseUrl} for ${this.botName}, attempt ${this.reconnectAttempts}`);
     const path = "/public/ws";
-    this.socket = new import_isomorphic_ws.default(this.baseUrl + path, {
-      headers: {
-        ...this.authHeaders
-      }
-    });
+    const isBrowser = typeof window !== "undefined";
+    if (isBrowser) {
+      const params = new URLSearchParams(this.authHeaders).toString();
+      this.socket = new import_isomorphic_ws.default(`${this.baseUrl}${path}?${params}`);
+      console.warn("You are running this in a browser. You cannot auth via a browser because of websocket limitations. Please use Sailfish as a backend service.");
+    } else {
+      this.socket = new import_isomorphic_ws.default(this.baseUrl + path, {
+        headers: { ...this.authHeaders }
+      });
+    }
     this.socket.addEventListener("open", this.onOpen.bind(this));
     this.socket.addEventListener("message", this.onMessage.bind(this));
     this.socket.addEventListener("close", this.onClose.bind(this));

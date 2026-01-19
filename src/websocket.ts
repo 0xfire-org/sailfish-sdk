@@ -61,12 +61,18 @@ export class SailfishWebsocket {
     console.log(`Connecting to ${this.baseUrl} for ${this.botName}, attempt ${this.reconnectAttempts}`);
 
     const path = "/public/ws";
+    const isBrowser = typeof window !== "undefined";
+    if (isBrowser) {
+      const params = new URLSearchParams(this.authHeaders as any).toString();
+      this.socket = new WebSocket(`${this.baseUrl}${path}?${params}`);
+      console.warn("You are running this in a browser. You cannot auth via a browser because of websocket limitations. Please use Sailfish as a backend service.");
+    } else {
+      // Node.js environment allows the headers object
+      this.socket = new WebSocket(this.baseUrl + path, {
+        headers: { ...this.authHeaders },
+      } as any);
+    }
 
-    this.socket = new WebSocket(this.baseUrl + path, {
-      headers: {
-        ...this.authHeaders,
-      },
-    });
     this.socket.addEventListener("open", this.onOpen.bind(this));
     this.socket.addEventListener("message", this.onMessage.bind(this));
     this.socket.addEventListener("close", this.onClose.bind(this));
