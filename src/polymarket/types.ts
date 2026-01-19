@@ -2,7 +2,7 @@ import { SailfishMessage } from "../types";
 
 
 export enum PolymarketSailfishEventResource {
-  MarketOrdebooks = "market-ordebooks",
+  MarketOrdebooks = "market-orderbooks",
 }
 
 export interface BookSide {

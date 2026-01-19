@@ -19,11 +19,12 @@ import type { SailfishMessage } from "./src/types";
 // Set up callbacks to handle incoming messages
 const callbacks: PolymarketSailfishCallbacks = {
   onMessage: (message: SailfishMessage) => {
-    const pretty_json = JSON.stringify(message, null, 2);
-    console.log(pretty_json);
+
   },
 
   onMarketOrdebooks: (orderbook: MarketOrdebooks) => {
+    const pretty_json = JSON.stringify(orderbook, null, 2);
+    console.log(pretty_json);
   },
 };
 
