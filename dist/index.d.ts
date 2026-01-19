@@ -3,6 +3,34 @@ import { Method } from 'axios';
 declare enum PolymarketSailfishEventResource {
     MarketOrdebooks = "market-ordebooks"
 }
+interface BookSide {
+    levels: Record<string, string>;
+}
+interface SimpleMarket {
+    market_slug: string;
+    question: string;
+    token_0: string;
+    token_1: string;
+    last_update_time: string;
+}
+interface Orderbook {
+    bids: BookSide;
+    asks: BookSide;
+    tick_size: string;
+}
+interface MarketOrdebooks {
+    orderbook_0: Orderbook;
+    orderbook_1: Orderbook;
+    market_slug: string;
+    question: string;
+    token_0: string;
+    token_1: string;
+    last_update_time: string;
+}
+type PolymarketSailfishCallbacks = {
+    onMessage: (message: SailfishMessage) => void;
+    onMarketOrdebooks: (message: MarketOrdebooks) => void;
+};
 
 type SailfishCallbacks = {
     onMessage: (message: SailfishMessage) => void;
@@ -414,4 +442,23 @@ declare class SailfishWebsocket {
     send(data: string | object): void;
 }
 
-export { type AuthHeaders, BONDING_CURVE_POOL_TYPES, DEFAULT_QUOTE_TOKEN_ADDRESSES, type Filter, type GraduatedPoolsQuery, type IndexedPumpFunGraduatedPool, type IndexedRaydiumLaunchpadMigrateToAmm, type IndexedRaydiumLaunchpadMigrateToCpswap, type InstructionPosition, type PolymarketTier, type PoolInfo, type PoolInit, PoolType, type RawGraduations, Sailfish, SailfishApi, type SailfishCallbacks, SailfishEventResource, SailfishEventType, type SailfishMessage, SailfishTier, type SailfishTierBasic, type SailfishTierFree, type SailfishTierType, SailfishWebsocket, type SolTxData, type TokenInfo, type TokenInit, type TokenMint, type Trade, type TradeIndex, type TradeRaw, type TradesQuery, amountToFloatString, getQuoteAndBaseTokenInfos, getTradeData };
+type PolymarketSailfishInit = {
+    filter: any;
+    callbacks: PolymarketSailfishCallbacks;
+};
+declare class PolymarketSailfish {
+    private filter;
+    private callbacks;
+    private ws;
+    private markets;
+    private orderbooks;
+    constructor({ filter, callbacks, }: PolymarketSailfishInit);
+    isRunning(): boolean;
+    swim(): void;
+    rest(): void;
+    onMessage(message: SailfishMessage): void;
+    getMarkets(): Record<string, SimpleMarket>;
+    getOrderbook(marketSlug: string): MarketOrdebooks | null;
+}
+
+export { type AuthHeaders, BONDING_CURVE_POOL_TYPES, type BookSide, DEFAULT_QUOTE_TOKEN_ADDRESSES, type Filter, type GraduatedPoolsQuery, type IndexedPumpFunGraduatedPool, type IndexedRaydiumLaunchpadMigrateToAmm, type IndexedRaydiumLaunchpadMigrateToCpswap, type InstructionPosition, type MarketOrdebooks, type Orderbook, PolymarketSailfish, type PolymarketSailfishCallbacks, PolymarketSailfishEventResource, type PolymarketTier, type PoolInfo, type PoolInit, PoolType, type RawGraduations, Sailfish, SailfishApi, type SailfishCallbacks, SailfishEventResource, SailfishEventType, type SailfishMessage, SailfishTier, type SailfishTierBasic, type SailfishTierFree, type SailfishTierType, SailfishWebsocket, type SimpleMarket, type SolTxData, type TokenInfo, type TokenInit, type TokenMint, type Trade, type TradeIndex, type TradeRaw, type TradesQuery, amountToFloatString, getQuoteAndBaseTokenInfos, getTradeData };

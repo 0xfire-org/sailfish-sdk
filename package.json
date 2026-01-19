@@ -1,6 +1,6 @@
 {
   "name": "sailfish-sdk",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Sailfish SDK for JavaScript and TypeScript",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

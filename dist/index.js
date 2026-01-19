@@ -32,6 +32,8 @@ var index_exports = {};
 __export(index_exports, {
   BONDING_CURVE_POOL_TYPES: () => BONDING_CURVE_POOL_TYPES,
   DEFAULT_QUOTE_TOKEN_ADDRESSES: () => DEFAULT_QUOTE_TOKEN_ADDRESSES,
+  PolymarketSailfish: () => PolymarketSailfish,
+  PolymarketSailfishEventResource: () => PolymarketSailfishEventResource,
   PoolType: () => PoolType,
   Sailfish: () => Sailfish,
   SailfishApi: () => SailfishApi,
@@ -541,10 +543,85 @@ var Sailfish = class {
     return this.filter;
   }
 };
+
+// src/polymarket/types.ts
+var PolymarketSailfishEventResource = /* @__PURE__ */ ((PolymarketSailfishEventResource2) => {
+  PolymarketSailfishEventResource2["MarketOrdebooks"] = "market-ordebooks";
+  return PolymarketSailfishEventResource2;
+})(PolymarketSailfishEventResource || {});
+
+// src/polymarket/sailfish.ts
+var PolymarketSailfish = class {
+  // market_slug -> orderbook
+  constructor({
+    filter,
+    callbacks
+  }) {
+    this.filter = filter;
+    this.callbacks = callbacks;
+    this.ws = null;
+    this.markets = {};
+    this.orderbooks = {};
+  }
+  isRunning() {
+    return this.ws !== null && this.ws.connected;
+  }
+  swim() {
+    if (this.ws !== null) {
+      return;
+    }
+    this.ws = new SailfishWebsocket({
+      botName: "polymarket-ws",
+      tier: { type: "polymarket", apiKey: "polymarket-api-key" },
+      filter: this.filter,
+      callback: (message) => {
+        this.onMessage(message);
+      }
+    });
+  }
+  rest() {
+    if (this.ws === null) {
+      return;
+    }
+    this.ws.stop();
+    this.ws = null;
+  }
+  onMessage(message) {
+    switch (message.resource) {
+      case "market-ordebooks" /* MarketOrdebooks */: {
+        const data = message.data;
+        this.orderbooks[data.market_slug] = data;
+        if (this.markets[data.market_slug] === void 0) {
+          this.markets[data.market_slug] = {
+            market_slug: data.market_slug,
+            question: data.question,
+            token_0: data.token_0,
+            token_1: data.token_1,
+            last_update_time: data.last_update_time
+          };
+        }
+        this.callbacks.onMarketOrdebooks(data);
+        break;
+      }
+      default:
+        this.callbacks.onMessage(message);
+        break;
+    }
+  }
+  getMarkets() {
+    return this.markets;
+  }
+  getOrderbook(marketSlug) {
+    var _a;
+    return (_a = this.orderbooks[marketSlug]) != null ? _a : null;
+  }
+};
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   BONDING_CURVE_POOL_TYPES,
   DEFAULT_QUOTE_TOKEN_ADDRESSES,
+  PolymarketSailfish,
+  PolymarketSailfishEventResource,
   PoolType,
   Sailfish,
   SailfishApi,

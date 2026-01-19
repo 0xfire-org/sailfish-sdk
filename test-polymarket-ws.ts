@@ -8,7 +8,7 @@
  *   npx tsx test-polymarket-ws.ts
  */
 
-import { Sailfish } from "./src/polymarket/sailfish";
+import { PolymarketSailfish } from "./src/polymarket/sailfish";
 import type { MarketOrdebooks, PolymarketSailfishCallbacks } from "./src/polymarket/types";
 import type { SailfishMessage } from "./src/types";
 
@@ -36,7 +36,7 @@ const filter: any = {
 };
 
 // Create the Sailfish instance
-const sailfish = new Sailfish({
+const sailfish = new PolymarketSailfish({
   filter,
   callbacks,
 });

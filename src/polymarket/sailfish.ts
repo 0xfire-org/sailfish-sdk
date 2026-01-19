@@ -8,11 +8,11 @@ import {
 import { SailfishWebsocket } from "../websocket";
 import { SailfishMessage } from "../types";
 
-type SailfishInit =
+type PolymarketSailfishInit =
   | { filter: any, callbacks: PolymarketSailfishCallbacks }
   ;
 
-export class Sailfish {
+export class PolymarketSailfish {
   private filter: any;
   private callbacks: PolymarketSailfishCallbacks;
 
@@ -24,7 +24,7 @@ export class Sailfish {
   constructor({
     filter,
     callbacks,
-  }: SailfishInit) {
+  }: PolymarketSailfishInit) {
 
     this.filter = filter;
     this.callbacks = callbacks;
