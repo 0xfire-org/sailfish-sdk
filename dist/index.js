@@ -31,6 +31,7 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 var index_exports = {};
 __export(index_exports, {
   BONDING_CURVE_POOL_TYPES: () => BONDING_CURVE_POOL_TYPES,
+  CandleInterval: () => CandleInterval,
   DEFAULT_QUOTE_TOKEN_ADDRESSES: () => DEFAULT_QUOTE_TOKEN_ADDRESSES,
   PolymarketSailfish: () => PolymarketSailfish,
   PolymarketSailfishEventResource: () => PolymarketSailfishEventResource,
@@ -74,6 +75,13 @@ var PoolType = /* @__PURE__ */ ((PoolType2) => {
   PoolType2["MeteoraDlmm"] = "MeteoraDlmm";
   return PoolType2;
 })(PoolType || {});
+var CandleInterval = /* @__PURE__ */ ((CandleInterval2) => {
+  CandleInterval2["Seconds1"] = "1s";
+  CandleInterval2["Minutes1"] = "1m";
+  CandleInterval2["Hours1"] = "1h";
+  CandleInterval2["Days1"] = "1d";
+  return CandleInterval2;
+})(CandleInterval || {});
 
 // src/api.ts
 var import_axios = __toESM(require("axios"));
@@ -183,6 +191,9 @@ var SailfishApi = class {
   }
   async fetchTrades(query) {
     return this.httpRequest("POST", "/sailfish/trades/query", query);
+  }
+  async fetchCandles(query) {
+    return this.httpRequest("POST", "/sailfish/candles/query", query);
   }
   async fetchRawGraduations(query) {
     return this.httpRequest("POST", "/sailfish/graduated_pools_raw/query", query);
@@ -639,6 +650,7 @@ var PolymarketSailfish = class {
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   BONDING_CURVE_POOL_TYPES,
+  CandleInterval,
   DEFAULT_QUOTE_TOKEN_ADDRESSES,
   PolymarketSailfish,
   PolymarketSailfishEventResource,

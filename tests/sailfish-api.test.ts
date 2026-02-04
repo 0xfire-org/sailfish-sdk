@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { SailfishApi } from '../src/api';
-import { GraduatedPoolsQuery, TradesQuery, PoolType, PoolInfo, TokenInfo } from '../src/types';
+import { GraduatedPoolsQuery, TradesQuery, PoolType, PoolInfo, TokenInfo, Trade, CandlesQuery, CandlesResponse, CandleInterval } from '../src/types';
 import { testTiers } from './utils';
 
 
@@ -136,37 +136,22 @@ describe.each(testTiers())('SailfishApi ($type)', ({ type, tier }) => {
     console.log('Latest block:', latestBlock);
   });
 
-  it('should fetch trades', async () => {
-    const latestBlock = await api.fetchLatestBlock();
-    expect(latestBlock).not.toBeInstanceOf(Error);
-    expect(typeof latestBlock).toBe('number');
-    const tradesQuery: TradesQuery = {
-      lower_tick: latestBlock as number - 1_000,
-      upper_tick: latestBlock as number,
-      pool_types: [],
-      pool_addresses: ["3ucNos4NbumPLZNWztqGHNFFgkHeRMBQAVemeeomsUxv"], // USDC/SOL pool
-      token_addresses: [],
-      to_wallets: [],
-      from_wallets: [],
-    };
-    const trades_result = await api.fetchTrades(tradesQuery);
-    expect(trades_result).not.toBeInstanceOf(Error);
-    if (trades_result instanceof Error) {
-      expect.fail("sanity check");
+  describe.only('candles', () => {
+    async function fetchCandles(params: CandlesQuery): Promise<CandlesResponse> {
+      return await api.fetchCandles({
+        lower_tick: params.lower_tick,
+        upper_tick: params.upper_tick,
+        candle_interval: params.candle_interval,
+        pool_address: params.pool_address,
+      });
     }
-    console.log('Fetch trades:', trades_result);
-  });
 
-  it('should throw error for invalid block range', async () => {
-    async function fetchTradesWithRangeExpectError(range: Pick<TradesQuery, "lower_tick" | "upper_tick">) {
+    async function fetchCandlesWithRangeExpectError(range: Pick<CandlesQuery, "lower_tick" | "upper_tick">) {
       try {
-        await api.fetchTrades({
-          pool_types: [],
-          pool_addresses: [],
-          token_addresses: [],
-          to_wallets: [],
-          from_wallets: [],
+        await fetchCandles({
           ...range,
+          candle_interval: CandleInterval.Minutes1,
+          pool_address: POOL_FIXTURES.RAYDIUM_CLMM_SOL_USDC.address,
         });
         expect.fail("Expected to throw error");
       } catch (err) {
@@ -175,24 +160,102 @@ describe.each(testTiers())('SailfishApi ($type)', ({ type, tier }) => {
         }
         console.log('Error:', err?.message);
       }
-
     }
 
-    await fetchTradesWithRangeExpectError({
-      lower_tick: 0,
-      upper_tick: 1000000000,
+    it('should fetch', async () => {
+      const latestBlock = await api.fetchLatestBlock();
+      expect(latestBlock).not.toBeInstanceOf(Error);
+      expect(typeof latestBlock).toBe('number');
+      const candlesResult = await fetchCandles({
+        lower_tick: latestBlock as number - 1_000,
+        upper_tick: latestBlock as number,
+        candle_interval: CandleInterval.Minutes1,
+        pool_address: POOL_FIXTURES.RAYDIUM_CLMM_SOL_USDC.address,
+      });
+      expect(candlesResult).not.toBeInstanceOf(Error);
+      if (candlesResult instanceof Error) {
+        expect.fail("sanity check");
+      }
+      console.log('Fetch candles:', candlesResult);
     });
 
-    await fetchTradesWithRangeExpectError({
-      lower_tick: 1000000000,
-      upper_tick: 999999999,
-    });
-
-    await fetchTradesWithRangeExpectError({
-      lower_tick: -1,
-      upper_tick: 1000000001,
+    it('should throw error for invalid block range', async () => {
+      await fetchCandlesWithRangeExpectError({
+        lower_tick: 0,
+        upper_tick: 1000000000,
+      });
+      await fetchCandlesWithRangeExpectError({
+        lower_tick: 1000000000,
+        upper_tick: 999999999,
+      });
+      await fetchCandlesWithRangeExpectError({
+        lower_tick: -1,
+        upper_tick: 1000000001,
+      });
     });
   });
+
+  describe('trades', () => {
+    async function fetchTrades(params: Pick<TradesQuery, "lower_tick" | "upper_tick"> & Partial<Omit<TradesQuery, "lower_tick" | "upper_tick">>): Promise<Record<string, Trade[]>> {
+      return await api.fetchTrades({
+        lower_tick: params.lower_tick,
+        upper_tick: params.upper_tick,
+        pool_types: params.pool_types ?? [],
+        pool_addresses: params.pool_addresses ?? [],
+        token_addresses: params.token_addresses ?? [],
+        to_wallets: params.to_wallets ?? [],
+        from_wallets: params.from_wallets ?? [],
+      });
+    }
+
+    it('should fetch', async () => {
+      const latestBlock = await api.fetchLatestBlock();
+      expect(latestBlock).not.toBeInstanceOf(Error);
+      expect(typeof latestBlock).toBe('number');
+      const tradesResult = await fetchTrades({
+        lower_tick: latestBlock as number - 1_000,
+        upper_tick: latestBlock as number,
+        pool_addresses: ["3ucNos4NbumPLZNWztqGHNFFgkHeRMBQAVemeeomsUxv"], // USDC/SOL pool
+      });
+      expect(tradesResult).not.toBeInstanceOf(Error);
+      if (tradesResult instanceof Error) {
+        expect.fail("sanity check");
+      }
+      console.log('Fetch trades:', tradesResult);
+    });
+
+    it('should throw error for invalid block range', async () => {
+      async function fetchTradesWithRangeExpectError(range: Pick<TradesQuery, "lower_tick" | "upper_tick">) {
+        try {
+          await fetchTrades({
+            ...range,
+          });
+          expect.fail("Expected to throw error");
+        } catch (err) {
+          if (!(err instanceof Error)) {
+            expect.fail(`Unexpected error (not instance of Error):`, err);
+          }
+          console.log('Error:', err?.message);
+        }
+      }
+
+      await fetchTradesWithRangeExpectError({
+        lower_tick: 0,
+        upper_tick: 1000000000,
+      });
+
+      await fetchTradesWithRangeExpectError({
+        lower_tick: 1000000000,
+        upper_tick: 999999999,
+      });
+
+      await fetchTradesWithRangeExpectError({
+        lower_tick: -1,
+        upper_tick: 1000000001,
+      });
+    });
+  });
+
 
   it('should fetch graduated pools', async () => {
     const graduated_block = 374388563;

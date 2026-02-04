@@ -95,6 +95,23 @@ export type Trade = {
   to_wallet_account: string | null, // @dev - This is the wallet account of the trader that received the trade, applies only to Solana.
 }
 
+export enum CandleInterval {
+  Seconds1 = "1s",
+  Minutes1 = "1m",
+  Hours1 = "1h",
+  Days1 = "1d",
+}
+
+export type Candle = {
+  open_time: string, // DateTime ISO string
+  close_time: string, // DateTime ISO string
+  open: string, // Decimal
+  high: string, // Decimal
+  low: string, // Decimal
+  close: string, // Decimal
+  volume: string, // Decimal
+}
+
 export type TradeRaw = {
   index: TradeIndex,
 
@@ -171,6 +188,17 @@ export type TradesQuery = {
   token_addresses: string[],
   to_wallets: string[],
   from_wallets: string[],
+}
+
+export type CandlesQuery = {
+  lower_tick: number,
+  upper_tick: number,
+  candle_interval: CandleInterval,
+  pool_address: string,
+}
+
+export type CandlesResponse = {
+  candles: Candle[],
 }
 
 export type GraduatedPoolsQuery = {

@@ -112,6 +112,21 @@ type Trade = {
     from_wallet_account: string | null;
     to_wallet_account: string | null;
 };
+declare enum CandleInterval {
+    Seconds1 = "1s",
+    Minutes1 = "1m",
+    Hours1 = "1h",
+    Days1 = "1d"
+}
+type Candle = {
+    open_time: string;
+    close_time: string;
+    open: string;
+    high: string;
+    low: string;
+    close: string;
+    volume: string;
+};
 type TradeRaw = {
     index: TradeIndex;
     pool_type: string;
@@ -176,6 +191,15 @@ type TradesQuery = {
     token_addresses: string[];
     to_wallets: string[];
     from_wallets: string[];
+};
+type CandlesQuery = {
+    lower_tick: number;
+    upper_tick: number;
+    candle_interval: CandleInterval;
+    pool_address: string;
+};
+type CandlesResponse = {
+    candles: Candle[];
 };
 type GraduatedPoolsQuery = {
     lower_tick: number;
@@ -372,6 +396,7 @@ declare class SailfishApi {
     fetchPoolInfo(address: string): Promise<PoolInfo>;
     fetchTokenInfo(address: string): Promise<TokenInfo>;
     fetchTrades(query: TradesQuery): Promise<Record<string, Trade[]>>;
+    fetchCandles(query: CandlesQuery): Promise<CandlesResponse>;
     fetchRawGraduations(query: GraduatedPoolsQuery): Promise<RawGraduations>;
     httpRequest<ReqData, ResData>(method: Method, path: string, data?: ReqData): Promise<ResData>;
 }
@@ -469,4 +494,4 @@ declare class PolymarketSailfish {
     getOrderbook(marketSlug: string): MarketOrdebooks | null;
 }
 
-export { type AuthHeaders, BONDING_CURVE_POOL_TYPES, type BookSide, DEFAULT_QUOTE_TOKEN_ADDRESSES, type Filter, type GraduatedPoolsQuery, type IndexedPumpFunGraduatedPool, type IndexedRaydiumLaunchpadMigrateToAmm, type IndexedRaydiumLaunchpadMigrateToCpswap, type InstructionPosition, type MarketOrdebooks, type Orderbook, PolymarketSailfish, type PolymarketSailfishCallbacks, PolymarketSailfishEventResource, type PolymarketTier, type PoolInfo, type PoolInit, PoolType, type RawGraduations, Sailfish, SailfishApi, type SailfishCallbacks, SailfishEventResource, SailfishEventType, type SailfishMessage, SailfishTier, type SailfishTierBasic, type SailfishTierDemo, type SailfishTierFree, type SailfishTierType, SailfishWebsocket, type SimpleMarket, type SolTxData, type TokenInfo, type TokenInit, type TokenMint, type Trade, type TradeIndex, type TradeRaw, type TradesQuery, amountToFloatString, getQuoteAndBaseTokenInfos, getTradeData };
+export { type AuthHeaders, BONDING_CURVE_POOL_TYPES, type BookSide, type Candle, CandleInterval, type CandlesQuery, type CandlesResponse, DEFAULT_QUOTE_TOKEN_ADDRESSES, type Filter, type GraduatedPoolsQuery, type IndexedPumpFunGraduatedPool, type IndexedRaydiumLaunchpadMigrateToAmm, type IndexedRaydiumLaunchpadMigrateToCpswap, type InstructionPosition, type MarketOrdebooks, type Orderbook, PolymarketSailfish, type PolymarketSailfishCallbacks, PolymarketSailfishEventResource, type PolymarketTier, type PoolInfo, type PoolInit, PoolType, type RawGraduations, Sailfish, SailfishApi, type SailfishCallbacks, SailfishEventResource, SailfishEventType, type SailfishMessage, SailfishTier, type SailfishTierBasic, type SailfishTierDemo, type SailfishTierFree, type SailfishTierType, SailfishWebsocket, type SimpleMarket, type SolTxData, type TokenInfo, type TokenInit, type TokenMint, type Trade, type TradeIndex, type TradeRaw, type TradesQuery, amountToFloatString, getQuoteAndBaseTokenInfos, getTradeData };

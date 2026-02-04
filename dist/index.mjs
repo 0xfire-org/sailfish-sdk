@@ -25,6 +25,13 @@ var PoolType = /* @__PURE__ */ ((PoolType2) => {
   PoolType2["MeteoraDlmm"] = "MeteoraDlmm";
   return PoolType2;
 })(PoolType || {});
+var CandleInterval = /* @__PURE__ */ ((CandleInterval2) => {
+  CandleInterval2["Seconds1"] = "1s";
+  CandleInterval2["Minutes1"] = "1m";
+  CandleInterval2["Hours1"] = "1h";
+  CandleInterval2["Days1"] = "1d";
+  return CandleInterval2;
+})(CandleInterval || {});
 
 // src/api.ts
 import axios from "axios";
@@ -134,6 +141,9 @@ var SailfishApi = class {
   }
   async fetchTrades(query) {
     return this.httpRequest("POST", "/sailfish/trades/query", query);
+  }
+  async fetchCandles(query) {
+    return this.httpRequest("POST", "/sailfish/candles/query", query);
   }
   async fetchRawGraduations(query) {
     return this.httpRequest("POST", "/sailfish/graduated_pools_raw/query", query);
@@ -589,6 +599,7 @@ var PolymarketSailfish = class {
 };
 export {
   BONDING_CURVE_POOL_TYPES,
+  CandleInterval,
   DEFAULT_QUOTE_TOKEN_ADDRESSES,
   PolymarketSailfish,
   PolymarketSailfishEventResource,

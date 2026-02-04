@@ -83,6 +83,24 @@ paths:
                   items:
                     $ref: "#/components/schemas/Trade"
 
+  /sailfish/candles/query:
+    post:
+      summary: Query candles
+      operationId: fetchCandles
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CandlesQuery"
+      responses:
+        "200":
+          description: Candle data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CandlesResponse"
+
   /sailfish/graduated_pools_raw/query:
     post:
       summary: Query raw “graduated” pools
@@ -139,7 +157,6 @@ paths:
 
 components:
   schemas:
-
     # --------- Core enums and primitives ---------
     SailfishEventType:
       type: string
@@ -167,6 +184,14 @@ components:
         - MeteoraDyn
         - MeteoraDynV2
         - MeteoraDlmm
+
+    CandleInterval:
+      type: string
+      enum:
+        - "1s"
+        - "1m"
+        - "1h"
+        - "1d"
 
     Filter:
       type: object
@@ -507,6 +532,63 @@ components:
         - token_addresses
         - to_wallets
         - from_wallets
+
+    # --------- Candles ---------
+
+    Candle:
+      type: object
+      properties:
+        open_time:
+          type: string
+          format: date-time
+        close_time:
+          type: string
+          format: date-time
+        open:
+          type: string
+        high:
+          type: string
+        low:
+          type: string
+        close:
+          type: string
+        volume:
+          type: string
+      required:
+        - open_time
+        - close_time
+        - open
+        - high
+        - low
+        - close
+        - volume
+
+    CandlesQuery:
+      type: object
+      properties:
+        lower_tick:
+          type: integer
+        upper_tick:
+          type: integer
+        candle_interval:
+          $ref: "#/components/schemas/CandleInterval"
+        pool_address:
+          type: string
+      required:
+        - lower_tick
+        - upper_tick
+        - candle_interval
+        - pool_address
+
+    CandlesResponse:
+      type: object
+      properties:
+        candles:
+          type: array
+          items:
+            $ref: "#/components/schemas/Candle"
+      required:
+        - candles
 
     # --------- Graduations ---------
 

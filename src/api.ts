@@ -1,5 +1,5 @@
 import axios, { Method } from "axios";
-import type { PoolInfo, TokenInfo, TradesQuery, Trade, GraduatedPoolsQuery, RawGraduations } from "./types";
+import type { PoolInfo, TokenInfo, TradesQuery, Trade, GraduatedPoolsQuery, RawGraduations, CandlesResponse, CandlesQuery } from "./types";
 import { AuthHeaders, SailfishTier } from "./tier";
 
 export class SailfishApi {
@@ -28,6 +28,10 @@ export class SailfishApi {
 
   public async fetchTrades(query: TradesQuery): Promise<Record<string, Trade[]>> {
     return this.httpRequest("POST", "/sailfish/trades/query", query);
+  }
+
+  public async fetchCandles(query: CandlesQuery): Promise<CandlesResponse> {
+    return this.httpRequest("POST", "/sailfish/candles/query", query);
   }
 
   public async fetchRawGraduations(query: GraduatedPoolsQuery): Promise<RawGraduations> {
