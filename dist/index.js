@@ -32,6 +32,7 @@ var index_exports = {};
 __export(index_exports, {
   BONDING_CURVE_POOL_TYPES: () => BONDING_CURVE_POOL_TYPES,
   CandleInterval: () => CandleInterval,
+  CandlePrice: () => CandlePrice,
   DEFAULT_QUOTE_TOKEN_ADDRESSES: () => DEFAULT_QUOTE_TOKEN_ADDRESSES,
   PolymarketSailfish: () => PolymarketSailfish,
   PolymarketSailfishEventResource: () => PolymarketSailfishEventResource,
@@ -82,6 +83,13 @@ var CandleInterval = /* @__PURE__ */ ((CandleInterval2) => {
   CandleInterval2["Days1"] = "1d";
   return CandleInterval2;
 })(CandleInterval || {});
+var CandlePrice = /* @__PURE__ */ ((CandlePrice2) => {
+  CandlePrice2["Open"] = "open";
+  CandlePrice2["High"] = "high";
+  CandlePrice2["Low"] = "low";
+  CandlePrice2["Close"] = "close";
+  return CandlePrice2;
+})(CandlePrice || {});
 
 // src/api.ts
 var import_axios = __toESM(require("axios"));
@@ -651,6 +659,7 @@ var PolymarketSailfish = class {
 0 && (module.exports = {
   BONDING_CURVE_POOL_TYPES,
   CandleInterval,
+  CandlePrice,
   DEFAULT_QUOTE_TOKEN_ADDRESSES,
   PolymarketSailfish,
   PolymarketSailfishEventResource,

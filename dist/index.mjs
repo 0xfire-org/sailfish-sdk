@@ -32,6 +32,13 @@ var CandleInterval = /* @__PURE__ */ ((CandleInterval2) => {
   CandleInterval2["Days1"] = "1d";
   return CandleInterval2;
 })(CandleInterval || {});
+var CandlePrice = /* @__PURE__ */ ((CandlePrice2) => {
+  CandlePrice2["Open"] = "open";
+  CandlePrice2["High"] = "high";
+  CandlePrice2["Low"] = "low";
+  CandlePrice2["Close"] = "close";
+  return CandlePrice2;
+})(CandlePrice || {});
 
 // src/api.ts
 import axios from "axios";
@@ -600,6 +607,7 @@ var PolymarketSailfish = class {
 export {
   BONDING_CURVE_POOL_TYPES,
   CandleInterval,
+  CandlePrice,
   DEFAULT_QUOTE_TOKEN_ADDRESSES,
   PolymarketSailfish,
   PolymarketSailfishEventResource,

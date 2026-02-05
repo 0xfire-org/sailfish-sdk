@@ -102,6 +102,13 @@ export enum CandleInterval {
   Days1 = "1d",
 }
 
+export enum CandlePrice {
+  Open = "open",
+  High = "high",
+  Low = "low",
+  Close = "close",
+}
+
 export type Candle = {
   open_time: string, // DateTime ISO string
   close_time: string, // DateTime ISO string
@@ -195,11 +202,66 @@ export type CandlesQuery = {
   upper_tick: number,
   candle_interval: CandleInterval,
   pool_address: string,
+  indicators?: IndicatorsRequest,
 }
 
 export type CandlesResponse = {
   candles: Candle[],
+  indicators: IndicatorsResponse,
 }
+
+export type IndicatorsRequest = Record<string, IndicatorConfig>;
+
+export type IndicatorsResponse = Record<string, IndicatorOutput[]>;
+
+export type IndicatorConfig =
+  | IndicatorSimpleMovingAverageConfig
+  | IndicatorBollingerBandsConfig
+  | IndicatorOnBalanceVolumeConfig
+  | IndicatorRelativeStrengthIndexConfig
+  ;
+
+export type IndicatorOutput =
+  | IndicatorSimpleMovingAverageOutput
+  | IndicatorBollingerBandsOutput
+  | IndicatorOnBalanceVolumeOutput
+  | IndicatorRelativeStrengthIndexOutput
+  ;
+
+export type IndicatorSimpleMovingAverageConfig = {
+  type: "simple_moving_average",
+  period: number, // non-zero uint
+  price: CandlePrice,
+};
+
+export type IndicatorBollingerBandsConfig = {
+  type: "bollinger_bands",
+  multiplier: number, // float
+  period: number, // non-zero uint
+  price: CandlePrice,
+};
+
+export type IndicatorOnBalanceVolumeConfig = {
+  type: "on_balance_volume",
+}
+
+export type IndicatorRelativeStrengthIndexConfig = {
+  type: "relative_strength_index",
+  period: number, // non-zero uint
+  price: CandlePrice,
+}
+
+export type IndicatorSimpleMovingAverageOutput = string; // Decimal
+
+export type IndicatorBollingerBandsOutput = {
+  average: string, // Decimal
+  upper: string, // Decimal
+  lower: string, // Decimal
+}
+
+export type IndicatorOnBalanceVolumeOutput = string; // Decimal
+
+export type IndicatorRelativeStrengthIndexOutput = string;
 
 export type GraduatedPoolsQuery = {
   lower_tick: number,

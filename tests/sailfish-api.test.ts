@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { SailfishApi } from '../src/api';
-import { GraduatedPoolsQuery, TradesQuery, PoolType, PoolInfo, TokenInfo, Trade, CandlesQuery, CandlesResponse, CandleInterval } from '../src/types';
+import { GraduatedPoolsQuery, TradesQuery, PoolType, PoolInfo, TokenInfo, Trade, CandlesQuery, CandlesResponse, CandleInterval, CandlePrice } from '../src/types';
 import { testTiers } from './utils';
 
 
@@ -136,19 +136,10 @@ describe.each(testTiers())('SailfishApi ($type)', ({ type, tier }) => {
     console.log('Latest block:', latestBlock);
   });
 
-  describe.only('candles', () => {
-    async function fetchCandles(params: CandlesQuery): Promise<CandlesResponse> {
-      return await api.fetchCandles({
-        lower_tick: params.lower_tick,
-        upper_tick: params.upper_tick,
-        candle_interval: params.candle_interval,
-        pool_address: params.pool_address,
-      });
-    }
-
+  describe('candles', () => {
     async function fetchCandlesWithRangeExpectError(range: Pick<CandlesQuery, "lower_tick" | "upper_tick">) {
       try {
-        await fetchCandles({
+        await api.fetchCandles({
           ...range,
           candle_interval: CandleInterval.Minutes1,
           pool_address: POOL_FIXTURES.RAYDIUM_CLMM_SOL_USDC.address,
@@ -162,21 +153,73 @@ describe.each(testTiers())('SailfishApi ($type)', ({ type, tier }) => {
       }
     }
 
-    it('should fetch', async () => {
-      const latestBlock = await api.fetchLatestBlock();
-      expect(latestBlock).not.toBeInstanceOf(Error);
-      expect(typeof latestBlock).toBe('number');
-      const candlesResult = await fetchCandles({
-        lower_tick: latestBlock as number - 1_000,
-        upper_tick: latestBlock as number,
-        candle_interval: CandleInterval.Minutes1,
-        pool_address: POOL_FIXTURES.RAYDIUM_CLMM_SOL_USDC.address,
-      });
-      expect(candlesResult).not.toBeInstanceOf(Error);
-      if (candlesResult instanceof Error) {
-        expect.fail("sanity check");
+    describe('fetch', () => {
+      async function fetchLatestCandles({ pool_address, indicators }: Pick<CandlesQuery, "pool_address" | "indicators">) {
+        const latestBlock = await api.fetchLatestBlock();
+        expect(latestBlock).not.toBeInstanceOf(Error);
+        expect(typeof latestBlock).toBe('number');
+        const candlesResult = await api.fetchCandles({
+          lower_tick: latestBlock as number - 1_000,
+          upper_tick: latestBlock as number,
+          candle_interval: CandleInterval.Minutes1,
+          pool_address,
+          indicators,
+        });
+        expect(candlesResult).not.toBeInstanceOf(Error);
+        if (candlesResult instanceof Error) {
+          expect.fail("sanity check");
+        }
+        console.log('Fetch candles:', candlesResult);
+        return candlesResult;
       }
-      console.log('Fetch candles:', candlesResult);
+
+      it('should fetch without indicators', async () => {
+        const candlesResult = await fetchLatestCandles({
+          pool_address: POOL_FIXTURES.RAYDIUM_CLMM_SOL_USDC.address,
+        });
+        expect(candlesResult.candles.length).toBeGreaterThan(0);
+        expect(Object.keys(candlesResult.indicators).length).toBe(0);
+      });
+
+      it('should fetch with indicators', async () => {
+        const candlesResult = await fetchLatestCandles({
+          pool_address: POOL_FIXTURES.RAYDIUM_CLMM_SOL_USDC.address,
+          indicators: {
+            sma_5: {
+              type: "simple_moving_average",
+              period: 5,
+              price: CandlePrice.Close
+            },
+            sma_10: {
+              type: "simple_moving_average",
+              period: 10,
+              price: CandlePrice.Close
+            },
+            bb_20_2: {
+              type: "bollinger_bands",
+              multiplier: 2.0,
+              period: 20,
+              price: CandlePrice.Close
+            },
+            obv: {
+              type: "on_balance_volume"
+            },
+            rsi_14: {
+              type: "relative_strength_index",
+              period: 14,
+              price: CandlePrice.Close
+            }
+          },
+        });
+        expect(candlesResult.candles.length).toBeGreaterThan(0);
+        expect(Object.keys(candlesResult.indicators).length).toBe(5);
+        expect(candlesResult.indicators["sma_5"].length).toBe(candlesResult.candles.length);
+        expect(candlesResult.indicators["sma_10"].length).toBe(candlesResult.candles.length);
+        expect(candlesResult.indicators["bb_20_2"].length).toBe(candlesResult.candles.length);
+        expect(candlesResult.indicators["obv"].length).toBe(candlesResult.candles.length);
+        expect(candlesResult.indicators["rsi_14"].length).toBe(candlesResult.candles.length);
+      });
+
     });
 
     it('should throw error for invalid block range', async () => {

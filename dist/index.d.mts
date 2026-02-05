@@ -118,6 +118,12 @@ declare enum CandleInterval {
     Hours1 = "1h",
     Days1 = "1d"
 }
+declare enum CandlePrice {
+    Open = "open",
+    High = "high",
+    Low = "low",
+    Close = "close"
+}
 type Candle = {
     open_time: string;
     close_time: string;
@@ -197,10 +203,43 @@ type CandlesQuery = {
     upper_tick: number;
     candle_interval: CandleInterval;
     pool_address: string;
+    indicators?: IndicatorsRequest;
 };
 type CandlesResponse = {
     candles: Candle[];
+    indicators: IndicatorsResponse;
 };
+type IndicatorsRequest = Record<string, IndicatorConfig>;
+type IndicatorsResponse = Record<string, IndicatorOutput[]>;
+type IndicatorConfig = IndicatorSimpleMovingAverageConfig | IndicatorBollingerBandsConfig | IndicatorOnBalanceVolumeConfig | IndicatorRelativeStrengthIndexConfig;
+type IndicatorOutput = IndicatorSimpleMovingAverageOutput | IndicatorBollingerBandsOutput | IndicatorOnBalanceVolumeOutput | IndicatorRelativeStrengthIndexOutput;
+type IndicatorSimpleMovingAverageConfig = {
+    type: "simple_moving_average";
+    period: number;
+    price: CandlePrice;
+};
+type IndicatorBollingerBandsConfig = {
+    type: "bollinger_bands";
+    multiplier: number;
+    period: number;
+    price: CandlePrice;
+};
+type IndicatorOnBalanceVolumeConfig = {
+    type: "on_balance_volume";
+};
+type IndicatorRelativeStrengthIndexConfig = {
+    type: "relative_strength_index";
+    period: number;
+    price: CandlePrice;
+};
+type IndicatorSimpleMovingAverageOutput = string;
+type IndicatorBollingerBandsOutput = {
+    average: string;
+    upper: string;
+    lower: string;
+};
+type IndicatorOnBalanceVolumeOutput = string;
+type IndicatorRelativeStrengthIndexOutput = string;
 type GraduatedPoolsQuery = {
     lower_tick: number;
     upper_tick: number;
@@ -494,4 +533,4 @@ declare class PolymarketSailfish {
     getOrderbook(marketSlug: string): MarketOrdebooks | null;
 }
 
-export { type AuthHeaders, BONDING_CURVE_POOL_TYPES, type BookSide, type Candle, CandleInterval, type CandlesQuery, type CandlesResponse, DEFAULT_QUOTE_TOKEN_ADDRESSES, type Filter, type GraduatedPoolsQuery, type IndexedPumpFunGraduatedPool, type IndexedRaydiumLaunchpadMigrateToAmm, type IndexedRaydiumLaunchpadMigrateToCpswap, type InstructionPosition, type MarketOrdebooks, type Orderbook, PolymarketSailfish, type PolymarketSailfishCallbacks, PolymarketSailfishEventResource, type PolymarketTier, type PoolInfo, type PoolInit, PoolType, type RawGraduations, Sailfish, SailfishApi, type SailfishCallbacks, SailfishEventResource, SailfishEventType, type SailfishMessage, SailfishTier, type SailfishTierBasic, type SailfishTierDemo, type SailfishTierFree, type SailfishTierType, SailfishWebsocket, type SimpleMarket, type SolTxData, type TokenInfo, type TokenInit, type TokenMint, type Trade, type TradeIndex, type TradeRaw, type TradesQuery, amountToFloatString, getQuoteAndBaseTokenInfos, getTradeData };
+export { type AuthHeaders, BONDING_CURVE_POOL_TYPES, type BookSide, type Candle, CandleInterval, CandlePrice, type CandlesQuery, type CandlesResponse, DEFAULT_QUOTE_TOKEN_ADDRESSES, type Filter, type GraduatedPoolsQuery, type IndexedPumpFunGraduatedPool, type IndexedRaydiumLaunchpadMigrateToAmm, type IndexedRaydiumLaunchpadMigrateToCpswap, type IndicatorBollingerBandsConfig, type IndicatorBollingerBandsOutput, type IndicatorConfig, type IndicatorOnBalanceVolumeConfig, type IndicatorOnBalanceVolumeOutput, type IndicatorOutput, type IndicatorRelativeStrengthIndexConfig, type IndicatorRelativeStrengthIndexOutput, type IndicatorSimpleMovingAverageConfig, type IndicatorSimpleMovingAverageOutput, type IndicatorsRequest, type IndicatorsResponse, type InstructionPosition, type MarketOrdebooks, type Orderbook, PolymarketSailfish, type PolymarketSailfishCallbacks, PolymarketSailfishEventResource, type PolymarketTier, type PoolInfo, type PoolInit, PoolType, type RawGraduations, Sailfish, SailfishApi, type SailfishCallbacks, SailfishEventResource, SailfishEventType, type SailfishMessage, SailfishTier, type SailfishTierBasic, type SailfishTierDemo, type SailfishTierFree, type SailfishTierType, SailfishWebsocket, type SimpleMarket, type SolTxData, type TokenInfo, type TokenInit, type TokenMint, type Trade, type TradeIndex, type TradeRaw, type TradesQuery, amountToFloatString, getQuoteAndBaseTokenInfos, getTradeData };

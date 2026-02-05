@@ -19,7 +19,8 @@
     "prepare": "npm run build",
     "clean": "rm -rf dist",
     "test": "vitest run",
-    "test:polymarket": "tsx test-polymarket-ws.ts"
+    "test:polymarket": "tsx test-polymarket-ws.ts",
+    "validate-openapi": "redocly lint docs/openapi.yaml"
   },
   "keywords": [
     "sailfish",
@@ -38,7 +39,8 @@
     "tsup": "^8.5.0",
     "tsx": "^4.19.2",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@redocly/cli": "2.15.1"
   },
   "dependencies": {
     "axios": "^1.12.2",

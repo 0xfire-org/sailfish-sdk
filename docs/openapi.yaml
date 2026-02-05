@@ -193,6 +193,14 @@ components:
         - "1h"
         - "1d"
 
+    CandlePrice:
+      type: string
+      enum:
+        - open
+        - high
+        - low
+        - close
+
     Filter:
       type: object
       properties:
@@ -221,8 +229,7 @@ components:
         parent_index:
           type: integer
         child_index:
-          type: integer
-          nullable: true
+          type: [integer, "null"]
       required: [parent_index, child_index]
 
     TradeIndex:
@@ -231,6 +238,10 @@ components:
         tick:
           type: integer
           description: Typically block/slot number
+        tick_time:
+          type: [string, "null"]
+          format: date-time
+          description: Timestamp of the block/slot
         index_a:
           type: integer
           description: Index within the tick
@@ -239,7 +250,12 @@ components:
           description: Index within the transaction
         tx_hash:
           type: string
-      required: [tick, index_a, index_b, tx_hash]
+      required:
+        - tick
+        - tick_time
+        - index_a
+        - index_b
+        - tx_hash
 
     SolTxData:
       type: object
@@ -265,11 +281,9 @@ components:
         bribe:
           type: number
         priority_fee:
-          type: number
-          nullable: true
+          type: [number, "null"]
         index_in_slot:
-          type: integer
-          nullable: true
+          type: [integer, "null"]
       required:
         - slot
         - version
@@ -364,8 +378,7 @@ components:
         mint:
           type: string
         mint_authority:
-          type: string
-          nullable: true
+          type: [string, "null"]
       required:
         - tx
         - instruction_position
@@ -389,8 +402,7 @@ components:
         mint:
           type: string
         mint_authority:
-          type: string
-          nullable: true
+          type: [string, "null"]
       required:
         - tx
         - instruction_position
@@ -479,11 +491,9 @@ components:
         to_wallet:
           type: string
         from_wallet_account:
-          type: string
-          nullable: true
+          type: [string, "null"]
         to_wallet_account:
-          type: string
-          nullable: true
+          type: [string, "null"]
       required:
         - index
         - pool_address
@@ -574,6 +584,9 @@ components:
           $ref: "#/components/schemas/CandleInterval"
         pool_address:
           type: string
+        indicators:
+          $ref: "#/components/schemas/IndicatorsRequest"
+          nullable: true
       required:
         - lower_tick
         - upper_tick
@@ -587,8 +600,128 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Candle"
+        indicators:
+          $ref: "#/components/schemas/IndicatorsResponse"
       required:
         - candles
+
+    IndicatorsRequest:
+      type: object
+      additionalProperties:
+        $ref: "#/components/schemas/IndicatorConfig"
+
+    IndicatorsResponse:
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          $ref: "#/components/schemas/IndicatorOutput"
+
+    IndicatorConfig:
+      oneOf:
+        - $ref: "#/components/schemas/IndicatorSimpleMovingAverageConfig"
+        - $ref: "#/components/schemas/IndicatorBollingerBandsConfig"
+        - $ref: "#/components/schemas/IndicatorOnBalanceVolumeConfig"
+        - $ref: "#/components/schemas/IndicatorRelativeStrengthIndexConfig"
+      discriminator:
+        propertyName: type
+
+    IndicatorOutput:
+      oneOf:
+        - $ref: "#/components/schemas/IndicatorSimpleMovingAverageOutput"
+        - $ref: "#/components/schemas/IndicatorBollingerBandsOutput"
+        - $ref: "#/components/schemas/IndicatorOnBalanceVolumeOutput"
+        - $ref: "#/components/schemas/IndicatorRelativeStrengthIndexOutput"
+
+    IndicatorSimpleMovingAverageConfig:
+      type: object
+      required:
+        - type
+        - period
+        - price
+      properties:
+        type:
+          type: string
+          const: simple_moving_average
+        period:
+          type: integer
+          minimum: 1
+        price:
+          $ref: "#/components/schemas/CandlePrice"
+
+    IndicatorSimpleMovingAverageOutput:
+      type: string
+      description: Decimal
+
+    IndicatorBollingerBandsConfig:
+      type: object
+      required:
+        - type
+        - multiplier
+        - period
+        - price
+      properties:
+        type:
+          type: string
+          const: bollinger_bands
+        multiplier:
+          type: number
+          format: float
+        period:
+          type: integer
+          minimum: 1
+        price:
+          $ref: "#/components/schemas/CandlePrice"
+
+    IndicatorBollingerBandsOutput:
+      type: object
+      required:
+        - average
+        - upper
+        - lower
+      properties:
+        average:
+          type: string
+          description: Decimal
+        upper:
+          type: string
+          description: Decimal
+        lower:
+          type: string
+          description: Decimal
+
+    IndicatorOnBalanceVolumeConfig:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          const: on_balance_volume
+
+    IndicatorOnBalanceVolumeOutput:
+      type: string
+      description: Decimal
+
+    IndicatorRelativeStrengthIndexConfig:
+      type: object
+      required:
+        - type
+        - period
+        - price
+      properties:
+        type:
+          type: string
+          const: relative_strength_index
+        period:
+          type: integer
+          minimum: 1
+        price:
+          $ref: "#/components/schemas/CandlePrice"
+
+    IndicatorRelativeStrengthIndexOutput:
+      type: string
+      description: Decimal
 
     # --------- Graduations ---------
 
