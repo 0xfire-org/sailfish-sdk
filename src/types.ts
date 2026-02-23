@@ -67,6 +67,11 @@ export type PoolInfo = {
   token_1: string,
 }
 
+export type FuzzyPoolInfoQuery = {
+  token_symbol: string,
+  similarity_threshold?: number | null,
+};
+
 export type TradeIndex = {
   tick: number, // @dev - This is usually the block/slot number of the trade.
   index_a: number, // @dev - This is usually the index of the trade in within the tick. Think of it as the tx index.

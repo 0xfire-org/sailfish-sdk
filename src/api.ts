@@ -1,5 +1,5 @@
 import axios, { Method } from "axios";
-import type { PoolInfo, TokenInfo, TradesQuery, Trade, GraduatedPoolsQuery, RawGraduations, CandlesResponse, CandlesQuery } from "./types";
+import type { PoolInfo, TokenInfo, TradesQuery, Trade, GraduatedPoolsQuery, RawGraduations, CandlesResponse, CandlesQuery, FuzzyPoolInfoQuery } from "./types";
 import { AuthHeaders, SailfishTier } from "./tier";
 
 export class SailfishApi {
@@ -22,6 +22,10 @@ export class SailfishApi {
     return this.httpRequest("POST", "/sailfish/pools/query", address);
   }
 
+  public async fetchPoolInfoFuzzy(query: FuzzyPoolInfoQuery): Promise<PoolInfo[]> {
+    return this.httpRequest("POST", "/sailfish/pools/fuzzy-query", query);
+  }
+
   public async fetchTokenInfo(address: string): Promise<TokenInfo> {
     return this.httpRequest("POST", "/sailfish/tokens/query", address);
   }
@@ -39,9 +43,13 @@ export class SailfishApi {
   }
 
   async httpRequest<ReqData, ResData>(method: Method, path: string, data?: ReqData): Promise<ResData> {
+    const url = this.baseUrl + path;
+
+    // console.log(`Making ${method} request to ${url} with auth: ${JSON.stringify(this.authHeaders)} and data:`, data);
+
     const response = await axios.request({
       method,
-      url: this.baseUrl + path,
+      url,
       data,
       headers: {
         "Content-Type": "application/json",

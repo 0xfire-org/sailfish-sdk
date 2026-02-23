@@ -136,6 +136,27 @@ describe.each(testTiers())('SailfishApi ($type)', ({ type, tier }) => {
     console.log('Latest block:', latestBlock);
   });
 
+  describe('pools-fuzzy', () => {
+    it('should fetch fuzzy-matched pools', async () => {
+      const fuzzyTokenSymbol = "GOLD";
+      const poolInfos = await api.fetchPoolInfoFuzzy({
+        token_symbol: fuzzyTokenSymbol,
+        similarity_threshold: 0.3,
+      });
+      // console.log('Fuzzy-matched pools:', JSON.stringify(poolInfos, null, 2));
+      expect(poolInfos).toBeInstanceOf(Array);
+      expect(poolInfos.length).toBeGreaterThan(0);
+      poolInfos.forEach((poolInfo) => {
+        console.log('fuzzyTokenSymbol:', fuzzyTokenSymbol, 'baseSymbol:', poolInfo.base_token.symbol, 'quoteSymbol:', poolInfo.quote_token.symbol);
+        expect(poolInfo).not.toBeInstanceOf(Error);
+        expect(poolInfo.address).toBeTruthy();
+        expect(poolInfo.pool_type).toBeTruthy();
+        expect(poolInfo.quote_token).toBeTruthy();
+        expect(poolInfo.base_token).toBeTruthy();
+      });
+    }, 5 * 60 * 1000 /* 5 minutes timeout */);
+  });
+
   describe('candles', () => {
     async function fetchCandlesWithRangeExpectError(range: Pick<CandlesQuery, "lower_tick" | "upper_tick">) {
       try {

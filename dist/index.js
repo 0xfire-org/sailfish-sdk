@@ -194,6 +194,9 @@ var SailfishApi = class {
   async fetchPoolInfo(address) {
     return this.httpRequest("POST", "/sailfish/pools/query", address);
   }
+  async fetchPoolInfoFuzzy(query) {
+    return this.httpRequest("POST", "/sailfish/pools/fuzzy-query", query);
+  }
   async fetchTokenInfo(address) {
     return this.httpRequest("POST", "/sailfish/tokens/query", address);
   }
@@ -207,9 +210,10 @@ var SailfishApi = class {
     return this.httpRequest("POST", "/sailfish/graduated_pools_raw/query", query);
   }
   async httpRequest(method, path, data) {
+    const url = this.baseUrl + path;
     const response = await import_axios.default.request({
       method,
-      url: this.baseUrl + path,
+      url,
       data,
       headers: {
         "Content-Type": "application/json",
