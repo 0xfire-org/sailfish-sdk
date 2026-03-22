@@ -12,10 +12,6 @@ import { PolymarketSailfish } from "./src/polymarket/sailfish";
 import type { MarketOrdebooks, PolymarketSailfishCallbacks } from "./src/polymarket/types";
 import type { SailfishMessage } from "./src/types";
 
-// Note: The API key is currently hardcoded in the Sailfish class as "polymarket-api-key"
-// You may need to update src/polymarket/sailfish.ts line 49 to use your actual API key
-// or modify the class to accept an API key parameter
-
 // Set up callbacks to handle incoming messages
 const callbacks: PolymarketSailfishCallbacks = {
   onMessage: (message: SailfishMessage) => {
@@ -38,6 +34,7 @@ const filter: any = {
 
 // Create the Sailfish instance
 const sailfish = new PolymarketSailfish({
+  url: "https://polymarket-sailfish.0xfire.com",
   filter,
   callbacks,
 });

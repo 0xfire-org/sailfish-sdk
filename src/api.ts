@@ -1,17 +1,15 @@
 import axios, { Method } from "axios";
-import type { PoolInfo, TokenInfo, TradesQuery, Trade, GraduatedPoolsQuery, RawGraduations, CandlesResponse, CandlesQuery, FuzzyPoolInfoQuery } from "./types";
-import { AuthHeaders, SailfishTier } from "./tier";
+import type { PoolInfo, TokenInfo, TradesQuery, Trade, GraduatedPoolsQuery, RawGraduations, CandlesResponse, CandlesQuery, FuzzyPoolInfoQuery, SailfishConfig, AuthHeaders } from "./types.js";
+import { resolveConfig } from "./types.js";
 
 export class SailfishApi {
-  private readonly tier: SailfishTier;
   private readonly baseUrl: string;
   private readonly authHeaders: AuthHeaders;
 
-  constructor({ tier }: { tier: SailfishTier }) {
-    const { baseUrl, authHeaders } = SailfishTier.httpBaseUrl(tier);
-    this.tier = tier;
-    this.baseUrl = baseUrl;
-    this.authHeaders = authHeaders;
+  constructor(config: SailfishConfig) {
+    const resolved = resolveConfig(config);
+    this.baseUrl = resolved.httpBaseUrl;
+    this.authHeaders = resolved.authHeaders;
   }
 
   public async fetchLatestBlock(): Promise<number> {
@@ -45,8 +43,6 @@ export class SailfishApi {
   async httpRequest<ReqData, ResData>(method: Method, path: string, data?: ReqData): Promise<ResData> {
     const url = this.baseUrl + path;
 
-    // console.log(`Making ${method} request to ${url} with auth: ${JSON.stringify(this.authHeaders)} and data:`, data);
-
     const response = await axios.request({
       method,
       url,
@@ -57,10 +53,6 @@ export class SailfishApi {
       },
       timeout: 10 * 60 * 1000,
     });
-
-    if (response.status !== 200) {
-      throw new Error(`Failed to fetch latest block: ${response.statusText}`);
-    }
 
     return response.data;
   }

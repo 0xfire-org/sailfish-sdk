@@ -3,16 +3,18 @@ import {
   type MarketOrdebooks,
   type PolymarketSailfishCallbacks,
   PolymarketSailfishEventResource,
-} from "./types";
+} from "./types.js";
 
-import { SailfishWebsocket } from "../websocket";
-import { SailfishMessage } from "../types";
+import { SailfishWebsocket } from "../websocket.js";
+import { type SailfishConfig, type SailfishMessage } from "../types.js";
 
-type PolymarketSailfishInit =
-  | { filter: any, callbacks: PolymarketSailfishCallbacks }
-  ;
+type PolymarketSailfishInit = SailfishConfig & {
+  filter?: any;
+  callbacks?: PolymarketSailfishCallbacks;
+};
 
 export class PolymarketSailfish {
+  private readonly config: SailfishConfig;
   private filter: any;
   private callbacks: PolymarketSailfishCallbacks;
 
@@ -24,10 +26,12 @@ export class PolymarketSailfish {
   constructor({
     filter,
     callbacks,
+    ...config
   }: PolymarketSailfishInit) {
+    this.config = config;
 
-    this.filter = filter;
-    this.callbacks = callbacks;
+    this.filter = filter ?? {};
+    this.callbacks = callbacks ?? {};
 
     this.ws = null;
 
@@ -45,8 +49,8 @@ export class PolymarketSailfish {
     }
 
     this.ws = new SailfishWebsocket({
+      ...this.config,
       botName: "polymarket-ws",
-      tier: { type: "polymarket", apiKey: "polymarket-api-key" },
       filter: this.filter,
       callback: (message: SailfishMessage) => { this.onMessage(message) },
     });
@@ -75,11 +79,11 @@ export class PolymarketSailfish {
             last_update_time: data.last_update_time,
           };
         }
-        this.callbacks.onMarketOrdebooks(data);
+        this.callbacks.onMarketOrdebooks?.(data);
         break;
       }
       default:
-        this.callbacks.onMessage(message);
+        this.callbacks.onMessage?.(message);
         break;
     }
   }

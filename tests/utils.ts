@@ -1,12 +1,14 @@
-import { SailfishTier, SailfishTierType } from "../src/tier";
+import type { SailfishConfig } from "../src/types";
 import * as dotenv from "dotenv";
 
-export function testTiers(): { type: SailfishTierType, tier: SailfishTier }[] {
+export type TestEndpoint = { name: string; config: SailfishConfig };
+
+export function testEndpoints(): TestEndpoint[] {
   const apiKey = testApiKey();
   return [
-    SailfishTier.free({ apiKey }),
-    SailfishTier.basic({ apiKey }),
-  ].map((tier) => ({ type: tier.type, tier }));
+    { name: "free", config: { url: "https://free.sailfish.solanavibestation.com", apiKey } },
+    { name: "basic", config: { url: "https://basic.sailfish.solanavibestation.com", apiKey } },
+  ];
 }
 
 export function testApiKey(): string {

@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { SailfishWebsocket } from '../src/websocket';
 import { SailfishEventResource, TokenInit, TokenMint, PoolInit, TradeRaw, SailfishMessage } from '../src/types';
-import { testTiers } from './utils';
+import { testEndpoints } from './utils';
 
-describe.sequential.each(testTiers())('SailfishWebsocket ($type)', ({ type, tier }) => {
+describe.sequential.each(testEndpoints())('SailfishWebsocket ($name)', ({ name, config }) => {
 
   const TEST_TIMEOUT = 1 * 60 * 1000; // 1min
 
@@ -15,7 +15,7 @@ describe.sequential.each(testTiers())('SailfishWebsocket ($type)', ({ type, tier
 
   it('should connect', async () => {
     const ws = new SailfishWebsocket({
-      tier,
+      ...config,
       botName: "sailfish-ws-test",
       callback: (_msg) => { },
       filter: {
@@ -47,7 +47,7 @@ describe.sequential.each(testTiers())('SailfishWebsocket ($type)', ({ type, tier
     const otherMessages: SailfishMessage[] = [];
 
     const ws = new SailfishWebsocket({
-      tier,
+      ...config,
       botName: "sailfish-ws-test",
       callback: (message: SailfishMessage) => {
         switch (message.resource) {

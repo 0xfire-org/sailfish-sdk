@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { SailfishApi } from '../src/api';
 import { GraduatedPoolsQuery, TradesQuery, PoolType, PoolInfo, TokenInfo, Trade, CandlesQuery, CandlesResponse, CandleInterval, CandlePrice } from '../src/types';
-import { testTiers } from './utils';
+import { testEndpoints } from './utils';
 
 
 type TokenFixture = {
@@ -114,8 +114,8 @@ function expectPoolInfoMatchesFixture(poolInfo: PoolInfo, fixture: PoolFixture, 
   }
 }
 
-describe.each(testTiers())('SailfishApi ($type)', ({ type, tier }) => {
-  const api = new SailfishApi({ tier });
+describe.each(testEndpoints())('SailfishApi ($name)', ({ name, config }) => {
+  const api = new SailfishApi(config);
 
   it.each(TokenFixturesByKey.all())('should fetch token info ($key=$fixture.address)', async ({ key, fixture }) => {
     const tokenInfo = await api.fetchTokenInfo(fixture.address);
