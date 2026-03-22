@@ -1,2 +1,2 @@
-export * from './sailfish';
-export * from './types';
+export * from './sailfish.js';
+export * from './types.js';

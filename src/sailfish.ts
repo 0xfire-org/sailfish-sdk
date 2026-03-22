@@ -5,17 +5,23 @@ import {
   type SailfishMessage,
   type TradeRaw,
   type SailfishCallbacks,
-  SailfishEventResource,
+  type SailfishConfig,
+  type FuzzyPoolInfoQuery,
+  type TradesQuery,
   type Trade,
+  type CandlesQuery,
+  type CandlesResponse,
+  type GraduatedPoolsQuery,
+  type RawGraduations,
+  SailfishEventResource,
   type PoolInit,
   PoolType,
   type TokenMint,
   type TokenInit,
-} from "./types";
+} from "./types.js";
 
-import { SailfishApi } from "./api";
-import { SailfishWebsocket } from "./websocket";
-import { SailfishTier } from "./tier";
+import { SailfishApi } from "./api.js";
+import { SailfishWebsocket } from "./websocket.js";
 
 export const DEFAULT_QUOTE_TOKEN_ADDRESSES: string[] = [
   "11111111111111111111111111111111", // SOL
@@ -44,7 +50,7 @@ export function amountToFloatString(amount: string | number, decimals: number): 
   return `${integerPart}.${fractionalPart}`;
 }
 
-export function getTradeData(poolInfo: PoolInfo, tradeRaw: TradeRaw): any {
+export function getTradeData(poolInfo: PoolInfo, tradeRaw: TradeRaw): { quote_amount: string; base_amount: string; price: string } {
   let quoteAmount = "0";
   let baseAmount = "0";
   let price = "0";
@@ -78,12 +84,19 @@ export function getQuoteAndBaseTokenInfos(token0Info: TokenInfo, token1Info: Tok
   throw new Error(`No supported quote token found for ${token0Info.address} and ${token1Info.address}`);
 }
 
-type SailfishInit =
-  | { filter: Filter, callbacks: SailfishCallbacks, tier: SailfishTier }
-  ;
+type SailfishInit = SailfishConfig & {
+  filter?: Filter;
+  callbacks?: SailfishCallbacks;
+};
+
+const DEFAULT_FILTER: Filter = {
+  token_addresses: [],
+  pool_addresses: [],
+  dex_types: [],
+};
 
 export class Sailfish {
-  private tier: SailfishTier;
+  private readonly config: SailfishConfig;
 
   private filter: Filter;
   private callbacks: SailfishCallbacks;
@@ -95,16 +108,16 @@ export class Sailfish {
   private tokenInfos: Record<string, TokenInfo>;
 
   constructor({
-    tier,
     filter,
     callbacks,
+    ...config
   }: SailfishInit) {
-    this.tier = tier;
+    this.config = config;
 
-    this.filter = filter;
-    this.callbacks = callbacks;
+    this.filter = filter ?? DEFAULT_FILTER;
+    this.callbacks = callbacks ?? {};
 
-    this.api = new SailfishApi({ tier });
+    this.api = new SailfishApi(config);
     this.ws = null;
 
     this.poolInfos = {};
@@ -121,7 +134,7 @@ export class Sailfish {
     }
 
     this.ws = new SailfishWebsocket({
-      tier: this.tier,
+      ...this.config,
       botName: "sailfish-ws",
       filter: this.filter,
       callback: (message: SailfishMessage) => { this.onMessage(message) },
@@ -141,36 +154,37 @@ export class Sailfish {
     switch (message.resource) {
       case SailfishEventResource.TokenInits:
         for (const tokenInit of message.data as TokenInit[]) {
-          this.callbacks.onTokenInit(tokenInit);
+          this.callbacks.onTokenInit?.(tokenInit);
         }
         break;
       case SailfishEventResource.TokenMints:
         for (const tokenMint of message.data as TokenMint[]) {
-          this.callbacks.onTokenMint(tokenMint);
+          this.callbacks.onTokenMint?.(tokenMint);
         }
         break;
       case SailfishEventResource.TokenGraduates:
         for (const poolInit of message.data as PoolInit[]) {
-          this.callbacks.onTokenGraduate(poolInit);
+          this.callbacks.onTokenGraduate?.(poolInit);
         }
         break;
       case SailfishEventResource.PoolInits:
         for (const poolInit of message.data as PoolInit[]) {
-          this.callbacks.onPoolInit(poolInit);
+          this.callbacks.onPoolInit?.(poolInit);
         }
         break;
       case SailfishEventResource.TradesRaw:
-        const tradesRaw = message.data as TradeRaw[];
-        for (const tradeRaw of tradesRaw) {
-          this.callbacks.onTradeRaw(tradeRaw);
-          const trade = this.convertTradeRawToTrade(tradeRaw);
-          if (trade !== null) {
-            this.callbacks.onTrade(trade);
+        for (const tradeRaw of message.data as TradeRaw[]) {
+          this.callbacks.onTradeRaw?.(tradeRaw);
+          if (this.callbacks.onTrade) {
+            const trade = this.convertTradeRawToTrade(tradeRaw);
+            if (trade !== null) {
+              this.callbacks.onTrade(trade);
+            }
           }
         }
         break;
       default:
-        this.callbacks.onMessage(message);
+        this.callbacks.onMessage?.(message);
         break;
     }
   }
@@ -209,46 +223,54 @@ export class Sailfish {
     }
   }
 
+  // --- REST API methods ---
+
+  public async fetchLatestBlock(): Promise<number> {
+    return this.api.fetchLatestBlock();
+  }
+
+  public async fetchPoolInfo(poolAddress: string): Promise<PoolInfo> {
+    if (this.hasCachedPoolInfo(poolAddress)) {
+      return this.poolInfos[poolAddress];
+    }
+    const poolInfo = await this.api.fetchPoolInfo(poolAddress);
+    this.poolInfos[poolAddress] = poolInfo;
+    return poolInfo;
+  }
+
+  public async fetchTokenInfo(tokenAddress: string): Promise<TokenInfo> {
+    if (this.hasCachedTokenInfo(tokenAddress)) {
+      return this.tokenInfos[tokenAddress];
+    }
+    const tokenInfo = await this.api.fetchTokenInfo(tokenAddress);
+    this.tokenInfos[tokenAddress] = tokenInfo;
+    return tokenInfo;
+  }
+
+  public async fetchPoolInfoFuzzy(query: FuzzyPoolInfoQuery): Promise<PoolInfo[]> {
+    return this.api.fetchPoolInfoFuzzy(query);
+  }
+
+  public async fetchTrades(query: TradesQuery): Promise<Record<string, Trade[]>> {
+    return this.api.fetchTrades(query);
+  }
+
+  public async fetchCandles(query: CandlesQuery): Promise<CandlesResponse> {
+    return this.api.fetchCandles(query);
+  }
+
+  public async fetchRawGraduations(query: GraduatedPoolsQuery): Promise<RawGraduations> {
+    return this.api.fetchRawGraduations(query);
+  }
+
+  // --- Cache methods ---
+
   public hasCachedPoolInfo(poolAddress: string): boolean {
     return this.poolInfos[poolAddress] !== undefined;
   }
 
   public hasCachedTokenInfo(tokenAddress: string): boolean {
     return this.tokenInfos[tokenAddress] !== undefined;
-  }
-
-  public async fetchPoolInfo(poolAddress: string): Promise<PoolInfo | Error> {
-    if (this.hasCachedPoolInfo(poolAddress)) {
-      return this.poolInfos[poolAddress];
-    }
-
-    try {
-      const newPoolInfo = await this.api.fetchPoolInfo(poolAddress);
-      if (newPoolInfo instanceof Error) {
-        return newPoolInfo;
-      }
-      this.poolInfos[poolAddress] = newPoolInfo;
-      return newPoolInfo;
-    } catch (error) {
-      return new Error(`Failed to fetch pool info: ${error}, use buildPoolInfo instead for ${BONDING_CURVE_POOL_TYPES.join(", ")} pools`);
-    }
-  }
-
-  public async fetchTokenInfo(tokenAddress: string): Promise<TokenInfo | Error> {
-    if (this.hasCachedTokenInfo(tokenAddress)) {
-      return this.tokenInfos[tokenAddress];
-    }
-
-    try {
-      const newTokenInfo = await this.api.fetchTokenInfo(tokenAddress);
-      if (newTokenInfo instanceof Error) {
-        return newTokenInfo;
-      }
-      this.tokenInfos[tokenAddress] = newTokenInfo;
-      return newTokenInfo;
-    } catch (error) {
-      return new Error(`Failed to fetch token info: ${error}`);
-    }
   }
 
   public insertPoolInfo(poolInfo: PoolInfo) {
@@ -258,32 +280,26 @@ export class Sailfish {
   public async buildPoolInfoFromPoolInit(
     poolInit: PoolInit,
     supportedQuoteTokens: string[] = DEFAULT_QUOTE_TOKEN_ADDRESSES,
-  ): Promise<PoolInfo | Error> {
+  ): Promise<PoolInfo> {
     if (this.hasCachedPoolInfo(poolInit.pool_address)) {
       return this.poolInfos[poolInit.pool_address];
     }
 
-    const token0Info = await this.fetchTokenInfo(poolInit.token_0_mint);
-    const token1Info = await this.fetchTokenInfo(poolInit.token_1_mint);
-    if (token0Info instanceof Error || token1Info instanceof Error) {
-      return new Error(`Failed to build pool info from pool init: ${token0Info} or ${token1Info}`);
-    }
+    const [token0Info, token1Info] = await Promise.all([
+      this.fetchTokenInfo(poolInit.token_0_mint),
+      this.fetchTokenInfo(poolInit.token_1_mint),
+    ]);
 
     const { quoteTokenInfo, baseTokenInfo } = getQuoteAndBaseTokenInfos(token0Info, token1Info, supportedQuoteTokens);
-    const poolInfo = await this.buildPoolInfo(poolInit.pool_type, poolInit.pool_address, quoteTokenInfo, baseTokenInfo);
-    if (poolInfo instanceof Error) {
-      return new Error(`Failed to build pool info from pool init: ${poolInfo}`);
-    }
-
-    return poolInfo;
+    return this.buildPoolInfo(poolInit.pool_type, poolInit.pool_address, quoteTokenInfo, baseTokenInfo);
   }
 
-  public async buildPoolInfo(
+  public buildPoolInfo(
     poolType: PoolType,
     poolAddress: string,
     quoteTokenInfo: TokenInfo,
     baseTokenInfo: TokenInfo,
-  ): Promise<PoolInfo | Error> {
+  ): PoolInfo {
     const poolInfo: PoolInfo = {
       pool_type: poolType,
       address: poolAddress,

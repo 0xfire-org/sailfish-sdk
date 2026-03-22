@@ -1,13 +1,31 @@
-import { PolymarketSailfishEventResource } from "./polymarket/types";
+import { PolymarketSailfishEventResource } from "./polymarket/types.js";
+
+export type AuthHeaders = Record<string, string>;
+
+export type SailfishConfig = {
+  url: string;
+  apiKey?: string | null;
+};
+
+export function resolveConfig(config: SailfishConfig): { httpBaseUrl: string; wsBaseUrl: string; authHeaders: AuthHeaders } {
+  const httpBaseUrl = config.url.replace(/\/+$/, '');
+  const wsBaseUrl = httpBaseUrl
+    .replace(/^https:\/\//, 'wss://')
+    .replace(/^http:\/\//, 'ws://');
+  const authHeaders: AuthHeaders = config.apiKey
+    ? { Authorization: config.apiKey }
+    : {};
+  return { httpBaseUrl, wsBaseUrl, authHeaders };
+}
 
 export type SailfishCallbacks = {
-  onMessage: (message: SailfishMessage) => void;
-  onTokenInit: (message: TokenInit) => void;
-  onTokenMint: (message: TokenMint) => void;
-  onTokenGraduate: (message: PoolInit) => void;
-  onPoolInit: (poolInit: PoolInit) => void;
-  onTradeRaw: (tradeRaw: TradeRaw) => void;
-  onTrade: (trade: Trade) => void;
+  onMessage?: (message: SailfishMessage) => void;
+  onTokenInit?: (message: TokenInit) => void;
+  onTokenMint?: (message: TokenMint) => void;
+  onTokenGraduate?: (message: PoolInit) => void;
+  onPoolInit?: (poolInit: PoolInit) => void;
+  onTradeRaw?: (tradeRaw: TradeRaw) => void;
+  onTrade?: (trade: Trade) => void;
 }
 
 export enum SailfishEventType {

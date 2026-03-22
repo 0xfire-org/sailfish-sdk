@@ -1,5 +1,5 @@
-import { AuthHeaders, SailfishTier } from "./tier";
-import type { Filter, SailfishMessage } from "./types";
+import type { SailfishConfig, AuthHeaders, Filter, SailfishMessage } from "./types.js";
+import { resolveConfig } from "./types.js";
 import WebSocket from "isomorphic-ws";
 
 export class SailfishWebsocket {
@@ -8,7 +8,6 @@ export class SailfishWebsocket {
   public connecting: boolean = false;
   public connected: boolean = false;
 
-  private readonly tier: SailfishTier;
   private readonly baseUrl: string;
   private readonly authHeaders: AuthHeaders;
 
@@ -22,20 +21,19 @@ export class SailfishWebsocket {
   private readonly reconnectDelay = 1000;
 
   constructor({
-    tier,
+    url,
+    apiKey,
     botName,
     filter,
     callback,
-  }: {
-    tier: SailfishTier,
+  }: SailfishConfig & {
     botName: string,
     filter: Filter,
     callback: (message: SailfishMessage) => void,
   }) {
-    const { baseUrl, authHeaders } = SailfishTier.wsBaseUrl(tier);
-    this.tier = tier;
-    this.baseUrl = baseUrl;
-    this.authHeaders = authHeaders;
+    const resolved = resolveConfig({ url, apiKey });
+    this.baseUrl = resolved.wsBaseUrl;
+    this.authHeaders = resolved.authHeaders;
 
     this.botName = botName;
     this.filter = filter;

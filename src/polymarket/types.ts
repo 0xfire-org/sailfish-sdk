@@ -1,5 +1,4 @@
-import { SailfishMessage } from "../types";
-
+import { SailfishMessage } from "../types.js";
 
 export enum PolymarketSailfishEventResource {
   MarketOrdebooks = "market-orderbooks",
@@ -34,6 +33,6 @@ export interface MarketOrdebooks {
 }
 
 export type PolymarketSailfishCallbacks = {
-  onMessage: (message: SailfishMessage) => void;
-  onMarketOrdebooks: (message: MarketOrdebooks) => void;
+  onMessage?: (message: SailfishMessage) => void;
+  onMarketOrdebooks?: (message: MarketOrdebooks) => void;
 };
