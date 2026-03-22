@@ -189,14 +189,12 @@ import { PolymarketSailfish } from "sailfish-sdk";
 const sailfish = new PolymarketSailfish({
   url: "https://polymarket-sailfish.0xfire.com",
   callbacks: {
-    onMessage: (msg) => {},
     onMarketOrdebooks: (data) => {
       console.log(data.market_slug, data.question);
       console.log("Yes bids:", data.orderbook_0.bids.levels);
       console.log("No asks:", data.orderbook_1.asks.levels);
     },
   },
-  filter: {},
 });
 
 sailfish.swim();
