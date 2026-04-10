@@ -2,9 +2,18 @@ import {
   type SimpleMarket,
   type MarketOrdebooks,
   type PolymarketSailfishCallbacks,
+  type MarketsQuery,
+  type MarketRow,
+  type TradesByMarketQuery,
+  type TradesByWalletQuery,
+  type ApiTrade,
+  type PaginatedResponse,
+  type OrderbookUpdateMessage,
   PolymarketSailfishEventResource,
 } from "./types.js";
 
+import { PolymarketApi } from "./api.js";
+import { PolymarketWebsocket } from "./websocket.js";
 import { SailfishWebsocket } from "../websocket.js";
 import { type SailfishConfig, type SailfishMessage } from "../types.js";
 
@@ -19,6 +28,8 @@ export class PolymarketSailfish {
   private callbacks: PolymarketSailfishCallbacks;
 
   private ws: SailfishWebsocket | null;
+  private api: PolymarketApi;
+  private subWs: PolymarketWebsocket | null;
 
   private markets: Record<string, SimpleMarket>; // market_slug -> market
   private orderbooks: Record<string, MarketOrdebooks>; // market_slug -> orderbook
@@ -34,6 +45,8 @@ export class PolymarketSailfish {
     this.callbacks = callbacks ?? {};
 
     this.ws = null;
+    this.api = new PolymarketApi(config);
+    this.subWs = null;
 
     this.markets = {};
     this.orderbooks = {};
@@ -94,6 +107,75 @@ export class PolymarketSailfish {
 
   public getOrderbook(marketSlug: string): MarketOrdebooks | null {
     return this.orderbooks[marketSlug] ?? null;
+  }
+
+  // --- REST API ---
+
+  public async fetchMarkets(query?: MarketsQuery): Promise<PaginatedResponse<MarketRow>> {
+    return this.api.fetchMarkets(query);
+  }
+
+  public async fetchTradesByMarket(
+    conditionId: string,
+    query?: TradesByMarketQuery,
+  ): Promise<PaginatedResponse<ApiTrade>> {
+    return this.api.fetchTradesByMarket(conditionId, query);
+  }
+
+  public async fetchTradesByWallet(
+    address: string,
+    query?: TradesByWalletQuery,
+  ): Promise<PaginatedResponse<ApiTrade>> {
+    return this.api.fetchTradesByWallet(address, query);
+  }
+
+  // --- Subscription WebSocket ---
+
+  public startSubscriptionWs(): void {
+    if (this.subWs !== null) return;
+    this.subWs = new PolymarketWebsocket({
+      ...this.config,
+      botName: "polymarket-sub-ws",
+      onOrderbookUpdate: (update: OrderbookUpdateMessage) => {
+        this.onSubscriptionUpdate(update);
+      },
+    });
+  }
+
+  public stopSubscriptionWs(): void {
+    if (this.subWs === null) return;
+    this.subWs.stop();
+    this.subWs = null;
+  }
+
+  public subscribe(conditionId: string): void {
+    if (this.subWs === null) {
+      this.startSubscriptionWs();
+    }
+    this.subWs!.subscribe(conditionId);
+  }
+
+  public unsubscribe(conditionId: string): void {
+    this.subWs?.unsubscribe(conditionId);
+  }
+
+  public getSubscriptions(): string[] {
+    return this.subWs?.getSubscriptions() ?? [];
+  }
+
+  private onSubscriptionUpdate(update: OrderbookUpdateMessage): void {
+    const data = update.data;
+    this.orderbooks[data.market_slug] = data;
+    if (this.markets[data.market_slug] === undefined) {
+      this.markets[data.market_slug] = {
+        market_slug: data.market_slug,
+        question: data.question,
+        token_0: data.token_0,
+        token_1: data.token_1,
+        last_update_time: data.last_update_time,
+      };
+    }
+    this.callbacks.onOrderbookUpdate?.(update);
   }
 
 }
